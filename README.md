@@ -9,3 +9,7 @@
 - сортировка товаров по остатку, цене
 - изменение названия товара, для совпадения с таким же товаров из другого магазина
 - показ изменения цены (повышение, понижение) от минимальной, с выводом в процентном виде
+
+
+### Wildberries example
+[![tPriceChecker - wildberries](https://img.youtube.com/vi/qVBeH79EhiQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=qVBeH79EhiQ)
