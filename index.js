@@ -6,7 +6,6 @@ const TYPE_FFAN = 'ffan';//ffan.ru
 const SORT_UP = 'up';
 const SORT_DOWN = 'down';
 
-
 function tPriceConfig(initType) {
     this.type = initType;
     this.initConfig = function(tPriceChecker) {
@@ -259,14 +258,14 @@ function tPriceChecker() {
         }
 
         document.querySelectorAll(self.selectors.listItems).forEach(function(item, i) {
-            var jsonItem, productId, itemElement, price = null, title = null, qty = 1, maxQty = 0, product;
+            var jsonItem, productId, itemElement, currentPrice = null, title = null, qty = 1, maxQty = 0, product;
 
             if(self.type === TYPE_OZON) {
                 itemElement = item;
                 jsonItem = self.jsonItems[i];
                 productId = jsonItem.products[0].id;
                 maxQty = jsonItem.quantity.maxQuantity;
-                price = self.formatPrice(self.getJsonPrice(jsonItem.products[0].priceColumn));
+                currentPrice = self.formatPrice(self.getJsonPrice(jsonItem.products[0].priceColumn));
                 title = self.getJsonTitle(jsonItem.products[0].titleColumn);
                 qty = jsonItem.quantity.quantity;
             } else {
@@ -312,14 +311,15 @@ function tPriceChecker() {
                 itemElement = itemProperty.closest(self.selectors.listItem);
                 var itemPriceNew = itemElement.querySelector(self.selectors.itemPriceHtml);
                 if (itemPriceNew) {
-                    price = self.formatPrice(itemPriceNew.innerHTML) / qty;
+                    currentPrice = self.formatPrice(itemPriceNew.innerHTML) / qty;
                 }
             }
 
-            //self.tProductRepository.saveEmptyFields(productId, title);
-            product = self.tProductRepository.initProduct(productId, price, title);
-            self.appendOldMinPrice(product, itemElement);
-            self.appendMaxQty(itemElement, maxQty);
+            if(currentPrice) {
+                product = self.tProductRepository.initProduct(productId, currentPrice, title);
+                self.appendOldMinPrice(product, itemElement);
+                self.appendMaxQty(itemElement, maxQty);
+            }
         });
 
         this.appendHeadElement();
@@ -356,8 +356,8 @@ function tPriceChecker() {
     };
     // append elements
     this.appendOldMinPrice = function(product, itemElement) {
-        //if(!product.price) {return;}
         var priceEl = itemElement.querySelector(this.selectors.itemPrice);
+        if(!priceEl) {return;}
         priceEl.classList.add('t-position-relative');
         priceEl.appendChild(this.getPriceElement(product));
     };
@@ -418,6 +418,8 @@ function tPriceChecker() {
 
         document.querySelector('.t-head-sort').appendChild(buttonSortQty);
         document.querySelector('.t-head-sort').appendChild(buttonSortPrce);
+
+        self.sort(buttonSortQty, 'qty');
     };
     this.sort = function(button, sortType) {
         // сброк другим кнопкам up, down
@@ -879,7 +881,6 @@ function tPriceStyle(initType) {
     };
 };
 
-
 function tProductRepository(type) {
     this.type = type;
     this.getSavingProductId = function(productId) {
@@ -893,27 +894,15 @@ function tProductRepository(type) {
 
         GM_setValue(this.getSavingProductId(productId), JSON.stringify(product));
     };
-    this.saveEmptyFields = function(productId, title = null) {
-        var product = this.getProductById(productId);
-        if(!product) {return;}
-        var toSave = false;
-
-        if(!product.id || product.id === 'undefined') {product.id = productId;toSave = true;}
-        if(!product.type || product.type === 'undefined') {product.type = this.type;toSave = true;}
-        if(title && (!product.title || product.title === 'undefined')) {product.title = title.trim();toSave = true;}
-
-        if(!toSave) {return;}
-        GM_setValue(this.getSavingProductId(productId), JSON.stringify(product));
-    };
     this.getCurrentDateString = function() {
         return new Date().toJSON().slice(0,10).split('-').reverse().join('.');
     };
-	this.initProduct = function(productId, currentPrice, title) {		
+	this.initProduct = function(productId, currentPrice, title) {
         var product = this.getProductById(productId);
         if (!product || product.price > currentPrice) {
             product = this.saveProduct(productId, currentPrice, title);
         }
-		
+
 		product.currentPrice = currentPrice;// цена, что сейчас реальная на сайте
 
         return product;
