@@ -17,3 +17,7 @@
 
 ### Ozon example
 [![tPriceChecker - ozon](https://img.youtube.com/vi/wdzN5YciVZw/maxresdefault.jpg)](https://www.youtube.com/watch?v=wdzN5YciVZw)
+
+### Chitai-gorod example
+[![tPriceChecker - chitai-gorod](https://img.youtube.com/vi/idn_Li0Hwfw/maxresdefault.jpg)](https://www.youtube.com/watch?v=idn_Li0Hwfw)
+
