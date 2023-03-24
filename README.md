@@ -1,6 +1,6 @@
 # t-price-checker
 
-Плагин для tampermonkey
+Плагин для [tampermonkey](https://www.tampermonkey.net)
 
 - фиксация минимальной цены товаров в корзине
 - ведение истории понижения цен
