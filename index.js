@@ -30,10 +30,10 @@ function tPriceConfig(initType) {
             case TYPE_OZON:
                 tPriceChecker.setSelectors({
                     basketHead: '.e0 .c7',
-                    listItems: '.c7 .bh5 .hb',
-                    listItem: '.bh5 .hb',
-                    itemPrice: '.g2b.g3b',
-                    itemQuantity: '.h1b.bh2',
+                    listItems: '.c7 .h4b .bh',
+                    listItem: '.h4b .bh',
+                    itemPrice: '.a2a-a',
+                    itemQuantity: '.hb1.h1b',
                 });
                 break;
             case TYPE_WILDBERRIES:
@@ -158,7 +158,16 @@ function tPriceChecker() {
 
         this.initUrlChangedListener();
         this.initConfig();
+        this.removePrevTimeFields();
         this.launch();
+    };
+    // удаление элементов, добавленных с прошлого захода
+    this.removePrevTimeFields = function() {
+        var headresult = document.querySelector('.t-head-result');
+        if(headresult) {headresult.remove();}
+
+        document.querySelectorAll('.t-item-qty').forEach(el => el.remove());
+        document.querySelectorAll('.t-old-price').forEach(el => el.remove());
     };
     // запуск
     this.launch = function() {
@@ -191,7 +200,7 @@ function tPriceChecker() {
                     setTimeout(function() {self.initPriceChecking();}, 800);
                 }
 
-                if(limitCount > 50) {
+                if(limitCount >= 50) {
                     console.log('Attempt limit reached in '+limitCount);
                     clearInterval(startChecking);
                 }
@@ -419,10 +428,10 @@ function tPriceChecker() {
         document.querySelector('.t-head-sort').appendChild(buttonSortQty);
         document.querySelector('.t-head-sort').appendChild(buttonSortPrce);
 
-        self.sort(buttonSortQty, 'qty');
+        //self.sort(buttonSortQty, 'qty');
     };
     this.sort = function(button, sortType) {
-        // сброк другим кнопкам up, down
+        // сброc другим кнопкам up, down
         document.querySelectorAll('.t-sort-button').forEach(function(button) {
             button.classList.remove(SORT_UP);
             button.classList.remove(SORT_DOWN);
@@ -432,6 +441,9 @@ function tPriceChecker() {
         switch(this.type) {
             case TYPE_WILDBERRIES:
                 items = $(this.selectors.listItems+':not(.not-available)');
+                break;
+            case TYPE_CHITAI_GOROD:
+                items = $('.products__items').first().find('.cart-item');
                 break;
             default:
                 items = $(this.selectors.listItems);
@@ -471,7 +483,6 @@ function tPriceChecker() {
     //get html elements
     this.getPriceElement = function(product) {
         var self = this;
-        //var oldMinPrice = this.tProductRepository.getOldMinPriceByProductId(product.id, product.price);
         var oldMinPrice = product.price;
 		var currentPrice = product.currentPrice;
 
@@ -489,18 +500,6 @@ function tPriceChecker() {
 
         // сравнение с пред ценой из истории
         var oldPriceForElement = oldMinPrice;
-        /*
-        var prevPrice = this.tProductRepository.getPrevPrice(productId);
-        if (prevPrice) {
-            if(prevPrice > currentPrice) {
-                colorClassName = 'down';
-                oldPriceForElement = prevPrice;
-            } else if(prevPrice < currentPrice) {
-                colorClassName = 'up';
-                oldPriceForElement = prevPrice;
-            }
-        }
-        */
 
         var div = document.createElement("div");
         div.className = 't-old-price';
@@ -599,7 +598,6 @@ function tPriceChecker() {
         document.querySelector('body').append(this.tHtml.getEditWindow(productId, this));
     };
 };
-
 
 function tHtml(type) {
     this.type = type;
@@ -959,18 +957,6 @@ function tProductRepository(type) {
 
         return foundProducts;
     };
-	/*
-    this.getOldMinPriceByProductId = function(productId, currentPrice) {
-        var product = this.getProductById(productId);
-        //GM_deleteValue(this.getProductBySavingId(productId));// проверка сохранений
-
-        if (!product || product.price > currentPrice) {
-            product = this.saveProduct(productId, currentPrice);
-        }
-
-        return product.price;
-    };
-	*/
     this.getPrevPrice = function(productId) {
         var product = this.getProductById(productId);
         if (!product) {return null;}
