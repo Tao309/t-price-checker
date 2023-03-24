@@ -13,3 +13,7 @@
 
 ### Wildberries example
 [![tPriceChecker - wildberries](https://img.youtube.com/vi/qVBeH79EhiQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=qVBeH79EhiQ)
+
+
+### Ozon example
+[![tPriceChecker - ozon](https://img.youtube.com/vi/wdzN5YciVZw/maxresdefault.jpg)](https://www.youtube.com/watch?v=wdzN5YciVZw)
