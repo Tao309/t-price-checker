@@ -139,7 +139,7 @@ function tPriceChecker() {
         })();
     };
     this.formatPrice = function(priceHtml) {
-        return priceHtml.replace(/\D+/g, '');
+        return priceHtml.replace(/\D+/g, '')*1;
     };
     this.getAvailabelItems = function() {
         switch(this.type) {
@@ -264,7 +264,7 @@ function tPriceChecker() {
 
         this.appendHeadElement();
         this.appendPriceChangedInfo();
-        this.appendNewMinPricesInfo();
+        //this.appendNewMinPricesInfo();
         this.appendSortControls();
     };
     // сейчас только на озон работает
@@ -333,6 +333,7 @@ function tPriceChecker() {
             document.querySelector('.t-head-info').appendChild(this.tHtml.getPriceChangedInfo(this.priceDownChanged, 'down'));
         }
     };
+    /*
     this.appendNewMinPricesInfo = function() {
         if(this.newMinPrices <= 0) {
             return;
@@ -340,6 +341,7 @@ function tPriceChecker() {
 
         document.querySelector('.t-head-info').appendChild(this.tHtml.getNewMinPricesInfo(this.newMinPrices));
     };
+    */
     // сортировка
     this.appendSortControls = function() {
         var self = this;
@@ -414,8 +416,8 @@ function tPriceChecker() {
     //get html elements
     this.getPriceElement = function(product) {
         var self = this;
-        var oldMinPrice = product.price;
-		var currentPrice = product.currentPrice;
+        var oldMinPrice = product.oldCurrentPrice;
+		var currentPrice = product.price;
 
         var colorClassName = 'not-changed', newMinPrice = '';
         if (currentPrice > oldMinPrice) {
