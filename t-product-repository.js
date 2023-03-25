@@ -16,11 +16,19 @@ function tProductRepository(type) {
     };
 	this.initProduct = function(productId, currentPrice, title) {
         var product = this.getProductById(productId);
-        if (!product || product.price > currentPrice) {
+        var oldCurrentPrice;
+        if(product) {
+            oldCurrentPrice = product.price*1;
+        } else {
+            oldCurrentPrice = currentPrice;
+        }
+
+        if (!product || product.price*1 > currentPrice) {
             product = this.saveProduct(productId, currentPrice, title);
         }
 
-		product.currentPrice = currentPrice;// цена, что сейчас реальная на сайте
+        product.oldCurrentPrice = oldCurrentPrice;
+        product.price = currentPrice;
 
         return product;
     };
@@ -35,7 +43,7 @@ function tProductRepository(type) {
         }
 
         let newDate = this.getCurrentDateString();
-        product.price = price;
+        product.price = price*1;
         product.dates.push({date: newDate, price: price});
         product.lastDate = newDate;
         product.type = this.type;
