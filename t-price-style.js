@@ -25,7 +25,7 @@ function tPriceStyle(initType) {
     .t-price-arrow.down {color: green;}
     .t-price-arrow.down:before {content: '↓';}
     .t-price-arrow.up:before, .t-price-arrow.down:before {padding-right: 4px;}
-    .t-old-price-percent {text-align:left;width:60px;}
+    .t-old-price-percent {text-align:left;width:100px;}
     .t-price-percent {font-size:14px;padding-left: 5px;color:#707070;}
 
     .t-old-price {position: absolute; top:0; cursor:default; width: 140px; padding-left: 35px;}
