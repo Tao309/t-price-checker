@@ -27,6 +27,7 @@ function tHtml(type) {
 
         return div;
     };
+    /*
     this.getNewMinPricesInfo = function(count) {
         if(count <= 0) {
             return;
@@ -38,6 +39,7 @@ function tHtml(type) {
 
         return div;
     };
+    */
     this.getPriceChangedInfo = function(count, type='up') {
         var div = document.createElement('div');
       	var className = 't-changed-result ';
@@ -140,7 +142,6 @@ function tHtml(type) {
         if (product) {
             editInput.value = product.title;
             productInfo.textContent = tPriceChecker.tProductRepository.getSavingProductId(productId);
-            console.log(product.title);
         }
 
         editForm.append(editInput);
