@@ -52,6 +52,14 @@
 // @require      {url}/index.js
 ```
   - вместо {place_2} добавить весь код из всех файлов, последовательно
+```
+t-config.js
+t-price-checker.js
+t-html.js
+t-price-style.js
+t-product-repository.js
+index.js
+````
 
 ### Wildberries example
 [![tPriceChecker - wildberries](https://img.youtube.com/vi/qVBeH79EhiQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=qVBeH79EhiQ)
