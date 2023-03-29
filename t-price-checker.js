@@ -16,18 +16,24 @@ function tPriceChecker() {
             default: return null;
         }
     };
+    this.addBasketHead = true;
 
     this.priceUpChanged = 0;// кол-во товаров с увеличенной ценой
     this.priceDownChanged = 0;// кол-во товаров с уменьшенной ценой
     this.newMinPrices = 0;// кол-во товаров с новой минимальной ценой
 
     this.config = {
-        timeout: 200,// Может удалить?
+        timeout: 200,
     };
     this.setConfig = function(config) {
         this.config = Object.assign(this.config, config);
     };
-    this.selectors = {};
+    this.selectors = {
+        basketHead: '.t-basket-head',
+        listItem: '.t-list-item',
+        itemPrice: '.t-item-price-column',
+        itemQuantity: '.t-item-qty-column',
+    };
     this.setSelectors = function(selectors) {
         this.selectors = Object.assign(this.selectors, selectors);
     };
@@ -117,8 +123,13 @@ function tPriceChecker() {
 
             var startChecking = setInterval(function() {
                 limitCount++;
-                var availableItems = self.getAvailabelItems();
+                var availableItems = self.getAvailableItems();
                 console.log('Looking for items...');
+
+                if (availableItems.length === 1) {
+                    self.addBasketHead = false;
+                }
+
                 if (availableItems.length > 0) {
                     console.log(availableItems.length+' items are found!');
                     clearInterval(startChecking);
@@ -129,36 +140,73 @@ function tPriceChecker() {
                     console.log('Attempt limit reached in '+limitCount);
                     clearInterval(startChecking);
                 }
-            }, 200);
+            }, self.config.timeout);
         })();
     };
     this.formatPrice = function(priceHtml) {
         return priceHtml.replace(/\D+/g, '')*1;
     };
-    this.getAvailabelItems = function() {
-        switch(this.type) {
-            case TYPE_WILDBERRIES:
-                return document.querySelectorAll(this.selectors.listItems+':not(.not-available)');
-            case TYPE_OZON:
-                var items = document.querySelectorAll(this.selectors.listItems), priceColumn, qtyColumn;
-                if(!items.length) {return items;}
+    this.getAvailableItems = function() {
+        var items = document.querySelectorAll(this.selectors.listItems);
+        if(!items.length) {return items;}
 
+        var basketHeader, priceColumn, qtyColumn, self = this;
+
+        switch(this.type) {
+            case TYPE_FFAN:
+                items.forEach(function (item) {
+                    priceColumn = item.querySelector('td.price');
+                    qtyColumn = item.querySelector('td.quantity');
+
+                    self.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
+                });
+
+                basketHeader = document.querySelector('.content > h1');
+                break;
+            case TYPE_OZON:
                 items.forEach(function (item) {
                     priceColumn = item.querySelector('div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3)');
                     qtyColumn = item.lastChild;
 
-                    item.classList.add('t-list-item');
-                    priceColumn.classList.add('t-item-price-column');
-                    qtyColumn.classList.add('t-item-qty-column');
+                    self.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
                 });
 
-                var basketHeader = document.querySelector('div[data-widget="header"]').parentNode;
-                basketHeader.classList.add('t-basket-head');
+                basketHeader = document.querySelector('div[data-widget="header"]').parentNode;
+                break;
+            case TYPE_WILDBERRIES:
+                items.forEach(function (item) {
+                    priceColumn = item.querySelector('.list-item__price');
+                    qtyColumn = item.querySelector('.list-item__count');
 
-                return items
-            default:
-                return document.querySelectorAll(this.selectors.listItems);
+                    self.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
+                });
+
+                basketHeader = document.querySelector('.basket-section__header-tabs');
+                break;
+            case TYPE_CHITAI_GOROD:
+                items.forEach(function (item) {
+                    priceColumn = item.querySelector('.product-price');
+                    qtyColumn = item.querySelector('.cart-item__counter');
+
+                    self.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
+                });
+
+                basketHeader = document.querySelector('.cart-page .wrapper');
+                break;
         }
+
+        if (basketHeader) {
+            basketHeader.classList.add('t-basket-head');
+        }
+
+        return items;
+    };
+    this.addCustomClassNamesToItems = function(item, priceColumn = null, qtyColumn = null) {
+        if (!priceColumn) {return;}
+
+        item.classList.add('t-list-item');
+        priceColumn.classList.add('t-item-price-column');
+        qtyColumn.classList.add('t-item-qty-column');
     };
     this.getFindingProperty = function() {
         switch(this.type) {
@@ -204,7 +252,7 @@ function tPriceChecker() {
             this.jsonItems = JSON.parse(basketStorage).basketItems;
         }
 
-        document.querySelectorAll(self.selectors.listItems).forEach(function(item, i) {
+        document.querySelectorAll(self.selectors.listItem).forEach(function(item, i) {
             var jsonItem, productId, itemElement, currentPrice = null, title = null, qty = 1, maxQty = 0, product;
 
             if(self.type === TYPE_OZON) {
@@ -222,8 +270,6 @@ function tPriceChecker() {
                     case TYPE_WILDBERRIES:
                         if(item.classList.contains('not-available')) {return;}
                         productId = itemProperty.getAttribute('data-nm');
-                        // catalog/2975034/detail.aspx?size=11828903
-                        //productId = productId.match(/size=(.*?)$/)[1];
 
                         //stocks
                         jsonItem = self.getJsonItemByCode(productId);
@@ -316,6 +362,8 @@ function tPriceChecker() {
         qtyEl.appendChild(this.tHtml.getQtyElement(maxQty));
     };
     this.appendHeadElement = function() {
+        if (!this.addBasketHead) {return;}
+
         var div = document.createElement('div');
         div.className = 't-head-result';
 
@@ -339,19 +387,10 @@ function tPriceChecker() {
             document.querySelector('.t-head-info').appendChild(this.tHtml.getPriceChangedInfo(this.priceDownChanged, 'down'));
         }
     };
-    /*
-    this.appendNewMinPricesInfo = function() {
-        if(this.newMinPrices <= 0) {
-            return;
-        }
-
-        document.querySelector('.t-head-info').appendChild(this.tHtml.getNewMinPricesInfo(this.newMinPrices));
-    };
-    */
     // сортировка
     this.appendSortControls = function() {
         var self = this;
-        var items = document.querySelectorAll(self.selectors.listItems);
+        var items = document.querySelectorAll(self.selectors.listItem);
         if(items.length < 2) {return;}
 
         var buttonSortQty = this.tHtml.getButtonSortQty();
@@ -376,17 +415,7 @@ function tPriceChecker() {
             button.classList.remove(SORT_DOWN);
         });
 
-        var items;
-        switch(this.type) {
-            case TYPE_WILDBERRIES:
-                items = $(this.selectors.listItems+':not(.not-available)');
-                break;
-            case TYPE_CHITAI_GOROD:
-                items = $('.products__items').first().find('.cart-item');
-                break;
-            default:
-                items = $(this.selectors.listItems);
-        }
+        var items = $(this.selectors.listItem);
 
         var direction = (button.getAttribute('data-sort') === SORT_UP) ? SORT_UP : SORT_DOWN;
         if (direction === SORT_UP) {

@@ -94,12 +94,12 @@ function tPriceStyle(initType) {
                 break;
             case TYPE_WILDBERRIES:
                 this.appendCssStyles(`<style>
-                   .t-head-result {left: 400px; width: 260px; top: 10px;}
+                   .t-head-result {left: 190px; width: 260px; top: -20px;}
                 </style>`);
                 break;
             case TYPE_CHITAI_GOROD:
                 this.appendCssStyles(`<style>
-                   .t-head-result {left:350px;}
+                   .t-head-result {left:300px;}
                    .t-old-price {position: relative; left: 40px; top:4px;}
 
                    .cart-item__content-right .cart-item__actions {right: -50px!important; top:125px!important;}
@@ -109,7 +109,7 @@ function tPriceStyle(initType) {
                 break;
             case TYPE_FFAN:
                 this.appendCssStyles(`<style>
-                    .t-head-result {left: 180px;top: 36px;}
+                    .t-head-result {left: 180px;top: -25px;}
                     #basket_items td.quantity {position:relative;}
                     .t-item-qty {left: 4px; top: 22px; position: absolute;}
                     .t-item-qty span {display:block!important;}
