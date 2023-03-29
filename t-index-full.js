@@ -364,7 +364,6 @@ function tPriceChecker() {
 
         this.appendHeadElement();
         this.appendPriceChangedInfo();
-        //this.appendNewMinPricesInfo();
         this.appendSortControls();
     };
     // сейчас только на озон работает
@@ -452,8 +451,6 @@ function tPriceChecker() {
 
         document.querySelector('.t-head-sort').appendChild(buttonSortQty);
         document.querySelector('.t-head-sort').appendChild(buttonSortPrce);
-
-        //self.sort(buttonSortQty, 'qty');
     };
     this.sort = function(button, sortType) {
         // сброc другим кнопкам up, down
@@ -643,19 +640,6 @@ function tHtml(type) {
 
         return div;
     };
-    /*
-    this.getNewMinPricesInfo = function(count) {
-        if(count <= 0) {
-            return;
-        }
-
-        var div = document.createElement('div');
-        div.className = 't-changed-result min-price';
-        div.textContent = 'Новые мин цен: '+count;
-
-        return div;
-    };
-    */
     this.getPriceChangedInfo = function(count, type='up') {
         var div = document.createElement('div');
         var className = 't-changed-result ';
@@ -1003,12 +987,6 @@ function tProductRepository(type) {
 
 var m = new tPriceChecker();
 m.init();
-
-/*
-m.tPriceStyle.appendCssStyles(`<style>
-
-</style>`);
-*/
 
 function tJson(type) {
     this.type = type;
