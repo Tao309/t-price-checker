@@ -1,3 +1,81 @@
+const TYPE_OZON = 'ozon';//www.ozon.ru
+const TYPE_WILDBERRIES = 'wildberries';//www.wildberries.ru
+const TYPE_CHITAI_GOROD = 'chitai-gorod';//www.chitai-gorod.ru
+const TYPE_FFAN = 'ffan';//ffan.ru
+
+const SORT_UP = 'up';
+const SORT_DOWN = 'down';
+
+function tPriceConfig(initType) {
+    this.type = initType;
+    this.initConfig = function(tPriceChecker) {
+        switch(this.type) {
+            case TYPE_OZON:
+                tPriceChecker.setConfig({timeout: 800});
+                break;
+        }
+    };
+    this.initSelectors = function(tPriceChecker) {
+        switch(this.type) {
+            case TYPE_FFAN:
+                tPriceChecker.setSelectors({
+                    basketHead: '.content > h1',
+                    listItems: '#basket_items tbody tr',
+                    listItem: 'tr',
+                    itemQuantity: '.quantity',
+                    itemPrice: '.price',
+                    itemPriceHtml: '.current_price',
+                });
+                break;
+            // case TYPE_OZON:
+            //     tPriceChecker.setSelectors({
+            //         basketHead: '.e0 .c7',
+            //         listItems: '.c7 .h4b .bh',
+            //         listItem: '.h4b .bh',
+            //         itemPrice: '.a2a-a',
+            //         itemQuantity: '.hb1.h1b',
+            //     });
+            //     break;
+            case TYPE_OZON:
+                tPriceChecker.setSelectors({
+                    basketHead: '.t-basket-head',
+                    listItems: '[data-widget="split"]>div:not(:first-child)',
+                    listItem: '.t-list-item',
+                    itemPrice: '.t-item-price-column',
+                    itemQuantity: '.t-item-qty-column',
+                });
+                break;
+            case TYPE_WILDBERRIES:
+                tPriceChecker.setSelectors({
+                    basketHead: '.basket-section__header-tabs',
+                    itemProperty: function(productId) {
+                        return '[data-nm="'+productId+'"]';
+                    },
+                    listItems: '.basket-section .list-item',
+                    listItem: '.list-item',
+                    itemPrice: '.list-item__price',
+                    itemPriceHtml: '.list-item__price-new',
+                    itemQuantity: '.list-item__count',
+                });
+                break;
+            case TYPE_CHITAI_GOROD:
+                tPriceChecker.setSelectors({
+                    basketHead: '.cart-page .wrapper',
+                    itemProperty: function(productId) {
+                        return 'a[href="/product/'+productId+'"]';
+                    },
+                    listItems: '.products__items .cart-item',
+                    listItem: '.cart-item',
+                    itemPrice: '.product-price',
+                    itemPriceHtml: '.product-price__value',
+                    itemQuantity: '.cart-item__counter',
+                    title: '.product-title__head'
+                });
+                break;
+        }
+    };
+}
+
 function tPriceChecker() {
     this.type = null;
     this.getInitType = function() {
@@ -536,4 +614,404 @@ function tPriceChecker() {
         document.querySelector('body').append(this.tHtml.getWindowShadow());
         document.querySelector('body').append(this.tHtml.getEditWindow(productId, this));
     };
+}
+
+function tHtml(type) {
+    this.type = type;
+    this.getShopLinkForProduct = function(product) {
+        var productId = product.id;
+
+        switch(product.type) {
+            case TYPE_WILDBERRIES:
+                return 'https://www.wildberries.ru/catalog/'+productId+'/detail.aspx';
+            case TYPE_OZON:
+                return 'https://www.ozon.ru/product/'+productId+'/';
+            case TYPE_FFAN:
+                return 'https://ffan.ru/catalog/product/'+productId+'/';
+            case TYPE_CHITAI_GOROD:
+                return 'https://www.chitai-gorod.ru/product/'+productId;
+        }
+
+    };
+    this.getQtyElement = function(qty) {
+        var div = document.createElement("div");
+        div.className = 't-item-qty';
+        div.setAttribute('data-qty', qty);
+
+        var span = document.createElement("span");
+        span.textContent = 'Всего: '+qty;
+
+        div.append(span);
+
+        return div;
+    };
+    /*
+    this.getNewMinPricesInfo = function(count) {
+        if(count <= 0) {
+            return;
+        }
+
+        var div = document.createElement('div');
+        div.className = 't-changed-result min-price';
+        div.textContent = 'Новые мин цен: '+count;
+
+        return div;
+    };
+    */
+    this.getPriceChangedInfo = function(count, type='up') {
+        var div = document.createElement('div');
+        var className = 't-changed-result ';
+        className += (type == 'up') ? 'price-up' : 'price-down';
+        div.className = className;
+        div.textContent = 'цена: '+count;
+
+        return div;
+    };
+    this.getButtonSortQty = function() {
+        var buttonSortQty = document.createElement('button');
+        buttonSortQty.textContent = 'sort by qty';
+        buttonSortQty.className = 't-sort-button t-sort-qty';
+
+        return buttonSortQty;
+    };
+    this.getButtonSortPrice = function() {
+        var buttonSortPrce = document.createElement('button');
+        buttonSortPrce.textContent = 'sort by price';
+        buttonSortPrce.className = 't-sort-button t-sort-price';
+
+        return buttonSortPrce;
+    };
+    this.getSameProduct = function(foundProduct, product) {
+        var productDiv = document.createElement("div");
+        productDiv.className = 't-same-product';
+
+        var link = document.createElement("a");
+        link.textContent = foundProduct.type+': '+foundProduct.price;
+        link.href = this.getShopLinkForProduct(foundProduct);
+        link.setAttribute('target','_blank');
+        if(product.price > foundProduct.price) {
+            link.className = 'down';
+        } else if(product.price < foundProduct.price) {
+            link.className = 'up';
+        }
+
+        productDiv.appendChild(link);
+
+        return productDiv;
+    };
+    this.getSameProducts = function(foundProducts, product) {
+        var self = this;
+        var div = document.createElement("div");
+        div.className = 't-same-products';
+
+        var productDiv,link;
+        foundProducts.forEach(function(foundProduct) {
+            productDiv = self.getSameProduct(foundProduct, product);
+            div.appendChild(productDiv);
+        });
+
+        return div;
+    };
+    this.closeEditWindow = function() {
+        if (document.getElementById('t-window-edit')) {document.getElementById('t-window-edit').remove();}
+        if (document.getElementById('t-window-shadow')) {document.getElementById('t-window-shadow').remove();}
+    };
+    this.getWindowShadow = function() {
+        var self = this;
+        var editWindowShadow = document.createElement("div");
+        editWindowShadow.className = 't-window-shadow';
+        editWindowShadow.id = 't-window-shadow';
+        editWindowShadow.addEventListener("click", function (event) {
+            self.closeEditWindow();
+        });
+
+        return editWindowShadow;
+    };
+    this.getEditWindow = function(productId, tPriceChecker) {
+        var self = this;
+        var editWindow = document.createElement("div");
+        editWindow.className = 't-window-edit';
+        editWindow.id = 't-window-edit';
+
+        var editBody = document.createElement("div");
+        editBody.className = 't-window-body';
+
+        var productInfo = document.createElement("div");
+        productInfo.className = 't-window-info';
+
+        var editForm = document.createElement("form");
+        var editInput = document.createElement("input");
+        editInput.type = 'text';
+        editInput.setAttribute('maxlength', '100');
+        var editSumbitButton = document.createElement("button");
+        editSumbitButton.className = 't-button t-button-submit';
+        editSumbitButton.type = 'submit';
+        editSumbitButton.textContent = 'Save';
+
+        editForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            var title = event.target.querySelector('input[type=text]').value;
+            tPriceChecker.tProductRepository.saveTitle(productId, title);
+            self.closeEditWindow();
+        })
+
+        var product = tPriceChecker.tProductRepository.getProductById(productId);
+        if (product) {
+            editInput.value = product.title;
+            productInfo.textContent = tPriceChecker.tProductRepository.getSavingProductId(productId);
+        }
+
+        editForm.append(editInput);
+        editForm.append(editSumbitButton);
+        editBody.append(productInfo);
+        editBody.append(editForm);
+        editWindow.append(editBody);
+
+        return editWindow;
+    };
+}
+
+function tPriceStyle(initType) {
+    this.type = initType;
+    this.addCssStyles = function() {
+        var head = document.querySelector("head");
+        head.innerHTML += `<style>
+     .t-button {border: 0;background: none;}
+     .t-button:hover {cursor:pointer;}
+      
+     .t-basket-head {position:relative;}
+
+     .t-window-shadow {z-index: 100; background:rgba(0,0,0,0.8); position:fixed; left:0; top:0%; width:100%; height:100%;}
+     .t-window-edit {z-index: 110; position:fixed; left:50%; top:50%; width:420px; margin-left: -210px;}
+     .t-window-edit .t-window-body {padding: 20px; border-radius: 10px; background: #fff;}
+     .t-window-edit .t-window-body input[type=text] {border: 1px solid #d1d1d1; width:300px; padding: 2px 6px;}
+     .t-window-edit .t-window-body button[type=submit] {margin-left: 20px;}
+     .t-window-edit .t-window-body .t-window-info {color: #626262; padding: 0 0 10px 4px;}
+
+    .t-old-price .t-title-edit {transform: rotate(90deg); display: inline-block; margin-left: 10px;}
+    .t-old-price .t-title-edit:before {content:'✎'; color: orange;}
+
+    .t-price-arrow {font-size: 18px; font-weight:bold;}
+    .t-price-arrow.not-changed {color: #0395c1;}
+    .t-price-arrow.not-changed:before {content: '✓';}
+    .t-price-arrow.up {color: red;}
+    .t-price-arrow.up:before {content: '↑';}
+    .t-price-arrow.down {color: green;}
+    .t-price-arrow.down:before {content: '↓';}
+    .t-price-arrow.up:before, .t-price-arrow.down:before {padding-right: 4px;}
+    .t-old-price-percent {text-align:left;width:100px;}
+    .t-price-percent {font-size:14px;padding-left: 5px;color:#707070;}
+
+    .t-old-price {position: absolute; top:0; cursor:default; width: 140px; padding-left: 35px;}
+    .t-old-price > span {display:block;text-align:left;}
+    .t-old-price > .t-price-old-date {font-size: 10px; margin-bottom: 4px;}
+    .t-new-min-price {position: absolute; left:30px; top:30px; color: #4fc78a;}
+    .t-old-price .t-hover-field {z-index:5; position:absolute; left: -130px; top:0; width: 160px; display:none;}
+    .t-old-price:hover .t-hover-field {display:block;}
+    .t-old-price .t-hover-field > div {border: 1px solid #d9cfcf;border-top:0;}
+    .t-old-price .t-hover-field > div:first-child {border-top: 1px solid #d9cfcf;}
+    .t-same-products,
+    .t-price-dates {cursor:default; z-index: 10; font-size: 14px; background: #fff; text-align: left; padding: 8px 12px; }
+    .t-price-dates {}
+    .t-price-dates .t-price-date {margin:2px 0;}
+    .t-old-price .t-price-dates-icon:before {content:'◎';color:#e78d1e;}
+    .t-old-price .t-price-same-products-icon:before {content:'◎';color:#b204b5;}
+
+    .t-same-products {}
+    .t-same-products .t-same-product {margin:2px 0;}
+    .t-same-products .t-same-product a {color: #242424;}
+    .t-same-products .t-same-product a:after {padding-left: 4px;}
+    .t-same-products .t-same-product a.up {color:red;}
+    .t-same-products .t-same-product a.down {color:green;}
+    .t-same-products .t-same-product a.up:after {content: '↑';}
+    .t-same-products .t-same-product a.down:after {content: '↓';}
+    .t-same-products .t-same-product a:hover {color: #0395c1;}
+
+    .t-head-result {font-size: 16px; margin: 4px 8px; border: 1px solid #edf3f7; padding: 10px 12px; z-index: 5; background: #fff; position: absolute; left: 24%; width: 340px;}
+    .t-head-info {cursor:default;}
+    .t-head-result > div {margin:4px 0;}
+    .t-changed-result {padding-left: 4px;color:#bf10b9; font-weight:bold; display: inline-block;}
+    .t-changed-result.min-price {color: #4fc78a; margin-left:8px;}
+    .t-changed-result.price-up {color: red;}
+    .t-changed-result.price-up:before {content:'↑';}
+    .t-changed-result.price-down {color: green;}
+    .t-changed-result.price-down:before {content:'↓';}
+    .t-changed-result.price-up:before,
+    .t-changed-result.price-down:before {padding-right: 6px;}
+
+    .t-product-not-found {font-size: 24px; color:#f97d12;}
+
+    .t-position-relative {position: relative;}
+    .t-item-qty {color: #af07af; margin:8px 0 0 4px;}
+
+    .t-sort-button {font-size: 16px; color: #707783; margin: 0 4px; border: 1px solid #edf3f7; border-radius: 4px; background: white; padding: 4px 8px;}
+    .t-sort-button:hover {cursor: pointer; background: #828997; color: #edf3f7;}
+    .t-sort-button.up,.t-sort-button.down {background: #707783; color: #edf3f7;}
+    .t-sort-button:before {padding-right: 6px;}
+    .t-sort-button.up {}
+    .t-sort-button.up:before {content: '↑';}
+    .t-sort-button.down {}
+    .t-sort-button.down:before {content: '↓'; }
+    .t-sort-button.t-sort-qty {}
+    .t-sort-button.t-sort-price {}
+    </style>`;
+        this.addTypeStyles();
+    };
+    this.addTypeStyles = function() {
+        switch(this.type) {
+            case TYPE_OZON:
+                this.appendCssStyles(`<style>
+                    .t-old-price {position: relative; left: -40px; top: 10px;}
+                    .t-head-result {left:150px; top:-20px;}
+                </style>`);
+                break;
+            case TYPE_WILDBERRIES:
+                this.appendCssStyles(`<style>
+                   .t-head-result {left: 400px; width: 260px; top: 10px;}
+                </style>`);
+                break;
+            case TYPE_CHITAI_GOROD:
+                this.appendCssStyles(`<style>
+                   .t-head-result {left:350px;}
+                   .t-old-price {position: relative; left: 40px; top:4px;}
+
+                   .cart-item__content-right .cart-item__actions {right: -50px!important; top:125px!important;}
+                   .product-price__value--discount {color: #424242!important;}
+                   .t-item-qty {margin: 20px 0 0 4px;}
+                </style>`);
+                break;
+            case TYPE_FFAN:
+                this.appendCssStyles(`<style>
+                    .t-head-result {left: 180px;top: 36px;}
+                    #basket_items td.quantity {position:relative;}
+                    .t-item-qty {left: 4px; top: 22px; position: absolute;}
+                    .t-item-qty span {display:block!important;}
+                    .t-old-price {position:relative; left:-36px; width: 70px;}
+                </style>`);
+                break;
+        }
+    };
+    this.appendCssStyles = function(styles) {
+        var head = document.querySelector("head");
+        head.innerHTML += styles;
+    };
+}
+
+function tProductRepository(type) {
+    this.type = type;
+    this.getSavingProductId = function(productId) {
+        return this.type+'-'+productId;
+    };
+    this.saveTitle = function(productId, title) {
+        if(typeof title === 'undefined' || !title) {return;}
+        var product = this.getProductById(productId);
+        if(!product) {return;}
+        product.title = title.trim();
+
+        GM_setValue(this.getSavingProductId(productId), JSON.stringify(product));
+    };
+    this.getCurrentDateString = function() {
+        return new Date().toJSON().slice(0,10).split('-').reverse().join('.');
+    };
+    this.initProduct = function(productId, currentPrice, title) {
+        var product = this.getProductById(productId);
+        var oldCurrentPrice;
+        if(product) {
+            oldCurrentPrice = product.price*1;
+        } else {
+            oldCurrentPrice = currentPrice;
+        }
+
+        if (!product || product.price*1 > currentPrice) {
+            product = this.saveProduct(productId, currentPrice, title);
+        }
+
+        product.oldCurrentPrice = oldCurrentPrice;
+        product.price = currentPrice;
+
+        return product;
+    };
+    this.saveProduct = function(productId, price, title) {
+        var product = this.getProductById(productId);
+        if (!product) {
+            product = {dates:[]};
+        }
+
+        if(typeof product.dates === 'undefined') {
+            product.dates = [];
+        }
+
+        let newDate = this.getCurrentDateString();
+        product.price = price*1;
+        product.dates.push({date: newDate, price: price});
+        product.lastDate = newDate;
+        product.type = this.type;
+        product.id = productId;
+
+        if(!product.title || typeof product.title === 'undefined') {product.title = title;}
+
+        GM_setValue(this.getSavingProductId(productId), JSON.stringify(product));
+
+        return product;
+    };
+    this.getProductById = function(productId) {
+        return this.getProductBySavingId(this.getSavingProductId(productId));
+    };
+    this.getProductBySavingId = function(savingProductId) {
+        if (typeof GM_getValue(savingProductId) !== 'undefined') {
+            return JSON.parse(GM_getValue(savingProductId));
+        }
+
+        return null;
+    };
+    this.getProductsBySameTitle = function(searchProduct) {
+        var foundProducts = [];
+        if(!searchProduct.title || typeof searchProduct.title === 'undefined') {return foundProducts;}
+        var self = this;
+
+        GM_listValues().forEach(function(value) {
+            var product = self.getProductBySavingId(value);
+            if(!product || !product.type) {return;}
+            if(product.type == searchProduct.type) {return;}
+
+            if(product.title == searchProduct.title) {
+                foundProducts.push(product);
+            }
+        });
+
+        foundProducts.sort((a,b) => (a.price > b.price) ? 1 : ((b.price > a.price) ? -1 : 0));
+
+        return foundProducts;
+    };
+    this.getPrevPrice = function(productId) {
+        var product = this.getProductById(productId);
+        if (!product) {return null;}
+
+        if(!product.dates || product.dates.length < 2) {return null;}
+        return product.dates[product.dates.length-2].price;
+    };
+    this.getPriceDates = function(productId) {
+        var product = this.getProductById(productId);
+
+        return (product && typeof product.dates !== 'undefined') ? product.dates : [];
+    };
+    this.getOldMinPriceDate = function(productId) {
+        var product = this.getProductById(productId);
+
+        return (product) ? product.lastDate : null;
+    };
+}
+
+var m = new tPriceChecker();
+m.init();
+
+/*
+m.tPriceStyle.appendCssStyles(`<style>
+
+</style>`);
+*/
+
+function tJson(type) {
+    this.type = type;
 }

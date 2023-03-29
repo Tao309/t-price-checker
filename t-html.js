@@ -42,7 +42,7 @@ function tHtml(type) {
     */
     this.getPriceChangedInfo = function(count, type='up') {
         var div = document.createElement('div');
-      	var className = 't-changed-result ';
+        var className = 't-changed-result ';
         className += (type == 'up') ? 'price-up' : 'price-down';
         div.className = className;
         div.textContent = 'цена: '+count;
@@ -152,4 +152,4 @@ function tHtml(type) {
 
         return editWindow;
     };
-};
+}

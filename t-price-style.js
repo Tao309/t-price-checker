@@ -3,9 +3,10 @@ function tPriceStyle(initType) {
     this.addCssStyles = function() {
         var head = document.querySelector("head");
         head.innerHTML += `<style>
-      .t-button {border: 0;background: none;}
-      .t-button:hover {cursor:pointer;}
-
+     .t-button {border: 0;background: none;}
+     .t-button:hover {cursor:pointer;}
+      
+     .t-basket-head {position:relative;}
 
      .t-window-shadow {z-index: 100; background:rgba(0,0,0,0.8); position:fixed; left:0; top:0%; width:100%; height:100%;}
      .t-window-edit {z-index: 110; position:fixed; left:50%; top:50%; width:420px; margin-left: -210px;}
@@ -32,7 +33,7 @@ function tPriceStyle(initType) {
     .t-old-price > span {display:block;text-align:left;}
     .t-old-price > .t-price-old-date {font-size: 10px; margin-bottom: 4px;}
     .t-new-min-price {position: absolute; left:30px; top:30px; color: #4fc78a;}
-    .t-old-price .t-hover-field {z-index:5; position:absolute; left: -130px; top:0; width: 155px; display:none;}
+    .t-old-price .t-hover-field {z-index:5; position:absolute; left: -130px; top:0; width: 160px; display:none;}
     .t-old-price:hover .t-hover-field {display:block;}
     .t-old-price .t-hover-field > div {border: 1px solid #d9cfcf;border-top:0;}
     .t-old-price .t-hover-field > div:first-child {border-top: 1px solid #d9cfcf;}
@@ -88,7 +89,7 @@ function tPriceStyle(initType) {
             case TYPE_OZON:
                 this.appendCssStyles(`<style>
                     .t-old-price {position: relative; left: -40px; top: 10px;}
-                    .t-head-result {left:400px;}
+                    .t-head-result {left:150px; top:-20px;}
                 </style>`);
                 break;
             case TYPE_WILDBERRIES:
@@ -121,4 +122,4 @@ function tPriceStyle(initType) {
         var head = document.querySelector("head");
         head.innerHTML += styles;
     };
-};
+}

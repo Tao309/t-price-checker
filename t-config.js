@@ -27,13 +27,22 @@ function tPriceConfig(initType) {
                     itemPriceHtml: '.current_price',
                 });
                 break;
+            // case TYPE_OZON:
+            //     tPriceChecker.setSelectors({
+            //         basketHead: '.e0 .c7',
+            //         listItems: '.c7 .h4b .bh',
+            //         listItem: '.h4b .bh',
+            //         itemPrice: '.a2a-a',
+            //         itemQuantity: '.hb1.h1b',
+            //     });
+            //     break;
             case TYPE_OZON:
                 tPriceChecker.setSelectors({
-                    basketHead: '.e0 .c7',
-                    listItems: '.c7 .h4b .bh',
-                    listItem: '.h4b .bh',
-                    itemPrice: '.a2a-a',
-                    itemQuantity: '.hb1.h1b',
+                    basketHead: '.t-basket-head',
+                    listItems: '[data-widget="split"]>div:not(:first-child)',
+                    listItem: '.t-list-item',
+                    itemPrice: '.t-item-price-column',
+                    itemQuantity: '.t-item-qty-column',
                 });
                 break;
             case TYPE_WILDBERRIES:
@@ -65,4 +74,4 @@ function tPriceConfig(initType) {
                 break;
         }
     };
-};
+}

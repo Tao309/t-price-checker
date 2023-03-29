@@ -9,4 +9,4 @@ m.tPriceStyle.appendCssStyles(`<style>
 
 function tJson(type) {
     this.type = type;
-};
+}

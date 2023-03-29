@@ -14,7 +14,7 @@ function tProductRepository(type) {
     this.getCurrentDateString = function() {
         return new Date().toJSON().slice(0,10).split('-').reverse().join('.');
     };
-	this.initProduct = function(productId, currentPrice, title) {
+    this.initProduct = function(productId, currentPrice, title) {
         var product = this.getProductById(productId);
         var oldCurrentPrice;
         if(product) {
@@ -65,7 +65,7 @@ function tProductRepository(type) {
 
         return null;
     };
-        this.getProductsBySameTitle = function(searchProduct) {
+    this.getProductsBySameTitle = function(searchProduct) {
         var foundProducts = [];
         if(!searchProduct.title || typeof searchProduct.title === 'undefined') {return foundProducts;}
         var self = this;
@@ -101,4 +101,4 @@ function tProductRepository(type) {
 
         return (product) ? product.lastDate : null;
     };
-};
+}
