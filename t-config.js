@@ -11,7 +11,7 @@ function tPriceConfig(initType) {
     this.initConfig = function(tPriceChecker) {
         switch(this.type) {
             case TYPE_OZON:
-                tPriceChecker.setConfig({timeout: 900});
+                tPriceChecker.setConfig({timeout: 1000});
                 break;
         }
     };
@@ -25,7 +25,7 @@ function tPriceConfig(initType) {
                 break;
             case TYPE_OZON:
                 tPriceChecker.setSelectors({
-                    listItems: '[data-widget="split"]>div:not(:first-child)',
+                    listItems: '[data-widget="split"]>div',
                 });
                 break;
             case TYPE_WILDBERRIES:

@@ -34,10 +34,7 @@
   // @grant    GM_setValue
   // @grant    GM_deleteValue
   // @grant    GM_listValues
-  // @grant    GM_getTab
-  // @grant    GM_saveTab
-  // @grant    GM_getTabs
-  // @grant    GM_cookie
+  // @grant    GM_xmlhttpRequest
   // ==/UserScript==
   {place_2}
 ```

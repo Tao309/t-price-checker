@@ -164,7 +164,9 @@ function tPriceChecker() {
                 basketHeader = document.querySelector('.content > h1');
                 break;
             case TYPE_OZON:
+                // @todo Добавить проход по самим [data-widget="split"]
                 items.forEach(function (item) {
+                    if(index === 0) {return;}
                     priceColumn = item.querySelector('div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3)');
                     qtyColumn = item.lastChild;
 
@@ -238,12 +240,8 @@ function tPriceChecker() {
         return items[0];
     };
     this.initPriceChecking = function() {
-        var self = this;
-
         if(this.type === TYPE_OZON) {
-            var dataELement = document.querySelector('[id^="state-split-"]');
-            var jsonData = JSON.parse(dataELement.getAttribute('data-state'));
-            this.jsonItems = jsonData.items;
+            this.jsonItems = __NUXT__.state.shared.itemsTrackingInfo;
         } else if(this.type === TYPE_WILDBERRIES) {
             var name,basketStorage;
             var u = JSON.parse(window.localStorage._user_deliveries).u;
@@ -252,17 +250,29 @@ function tPriceChecker() {
             this.jsonItems = JSON.parse(basketStorage).basketItems;
         }
 
+        var self = this;
+
         document.querySelectorAll(self.selectors.listItem).forEach(function(item, i) {
             var jsonItem, productId, itemElement, currentPrice = null, title = null, qty = 1, maxQty = 0, product;
 
             if(self.type === TYPE_OZON) {
                 itemElement = item;
-                jsonItem = self.jsonItems[i];
-                productId = jsonItem.products[0].id;
-                maxQty = jsonItem.quantity.maxQuantity;
-                currentPrice = self.formatPrice(self.getJsonPrice(jsonItem.products[0].priceColumn));
-                title = self.getJsonTitle(jsonItem.products[0].titleColumn);
-                qty = jsonItem.quantity.quantity;
+                var itemTitle = item.querySelector('span.tsBodyM > span').innerHTML.trim();
+
+                var foundIndex = self.jsonItems.findIndex(jsonItemIn => jsonItemIn.title === itemTitle);
+
+                if(foundIndex < 0) {
+                    console.log('Not found jsonItem for ' + itemTitle);
+                    return;
+                }
+
+                jsonItem = self.jsonItems[foundIndex];
+
+                productId = jsonItem.id;
+                maxQty = jsonItem.stockMaxQty;
+                currentPrice = jsonItem.finalPrice;
+                title = jsonItem.title.split('|')[0].trim();
+                qty = jsonItem.quantity;
             } else {
                 var itemProperty = item.querySelector(self.getFindingProperty());
 
