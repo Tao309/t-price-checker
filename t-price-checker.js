@@ -117,6 +117,26 @@ function tPriceChecker() {
                 break;
         }
 
+        if(this.type === TYPE_OZON) {
+            (function(open) {
+                XMLHttpRequest.prototype.open = function(type, url) {
+                    this.addEventListener("readystatechange", function() {
+                        if (url === 'https://xapi.ozon.ru/dlte/multi') {
+                            setTimeout(function() {
+                                console.log('Looking for new items...');
+                                var availableItems = self.getAvailableItems();
+                                if (availableItems.length > 0) {
+                                    console.log(availableItems.length+' items are found!');
+                                    self.initPriceChecking();
+                                }
+                            }, 50)
+                        }
+                    }, false);
+                    open.apply(this, arguments);
+                };
+            })(XMLHttpRequest.prototype.open);
+        }
+
         (function() {
             'use strict';
             var limitCount = 0;
@@ -164,14 +184,20 @@ function tPriceChecker() {
                 basketHeader = document.querySelector('.content > h1');
                 break;
             case TYPE_OZON:
-                // @todo Добавить проход по самим [data-widget="split"]
-                items.forEach(function (item) {
-                    if(index === 0) {return;}
+                var pattern = '[data-widget="split"]:not(.t-checked)';
+
+                var tempWidget = document.querySelector(pattern);
+                var tempItems = document.querySelectorAll(pattern + ' > div');
+
+                tempItems.forEach(function (item) {
                     priceColumn = item.querySelector('div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3)');
+                    if(!priceColumn) {return;}
                     qtyColumn = item.lastChild;
 
                     self.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
                 });
+
+                tempWidget.classList.add('t-checked');
 
                 basketHeader = document.querySelector('div[data-widget="header"]').parentNode;
                 break;
@@ -253,6 +279,8 @@ function tPriceChecker() {
         var self = this;
 
         document.querySelectorAll(self.selectors.listItem).forEach(function(item, i) {
+            if(item.classList.contains('t-item-checked')) {return;}
+            item.classList.add('t-item-checked');
             var jsonItem, productId, itemElement, currentPrice = null, title = null, qty = 1, maxQty = 0, product;
 
             if(self.type === TYPE_OZON) {
@@ -273,6 +301,11 @@ function tPriceChecker() {
                 currentPrice = jsonItem.finalPrice;
                 title = jsonItem.title.split('|')[0].trim();
                 qty = jsonItem.quantity;
+
+                if(maxQty === 0) {
+                    item.classList.add('t-no-stock');
+                    return;
+                }
             } else {
                 var itemProperty = item.querySelector(self.getFindingProperty());
 
@@ -374,6 +407,14 @@ function tPriceChecker() {
     this.appendHeadElement = function() {
         if (!this.addBasketHead) {return;}
 
+        var toRemove = document.querySelector('.t-head-result');
+        if(toRemove) {
+            this.priceUpChanged += toRemove.getAttribute('data-price-up');
+            this.priceDownChanged += toRemove.getAttribute('data-price-down');
+
+            toRemove.remove();
+        }
+
         var div = document.createElement('div');
         div.className = 't-head-result';
 
@@ -391,10 +432,12 @@ function tPriceChecker() {
     this.appendPriceChangedInfo = function() {
         if(this.priceUpChanged > 0) {
             document.querySelector('.t-head-info').appendChild(this.tHtml.getPriceChangedInfo(this.priceUpChanged, 'up'));
+            document.querySelector('.t-head-info').setAttribute('data-price-up', this.priceUpChanged);
         }
 
         if(this.priceDownChanged > 0) {
             document.querySelector('.t-head-info').appendChild(this.tHtml.getPriceChangedInfo(this.priceDownChanged, 'down'));
+            document.querySelector('.t-head-info').setAttribute('data-price-down', this.priceDownChanged);
         }
     };
     // сортировка
@@ -419,6 +462,7 @@ function tPriceChecker() {
         //self.sort(buttonSortQty, 'qty');
     };
     this.sort = function(button, sortType) {
+        // @todo сортировка не работает, учитывать класс t-no-stock
         // сброc другим кнопкам up, down
         document.querySelectorAll('.t-sort-button').forEach(function(button) {
             button.classList.remove(SORT_UP);
