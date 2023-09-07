@@ -495,11 +495,13 @@ function tPriceChecker() {
 
         var buttonSortQty = this.tHtml.getButtonSortQty();
         buttonSortQty.addEventListener("click", function (event) {
+            event.preventDefault();
             self.sort(event.target, 'qty');
         });
 
         var buttonSortPrce = this.tHtml.getButtonSortPrice();
         buttonSortPrce.addEventListener("click", function (event) {
+            event.preventDefault();
             self.sort(event.target, 'price');
         });
 
@@ -608,6 +610,7 @@ function tPriceChecker() {
         spanEdit.className = 't-title-edit t-button';
         spanEdit.setAttribute('title', 'Edit title');
         spanEdit.addEventListener("click", function (event) {
+            event.preventDefault();
             self.openEditTitleWindow(event.target, product.id);
         });
         oldPricePercentDiv.append(spanEdit);
@@ -761,6 +764,7 @@ function tHtml(type) {
         editWindowShadow.className = 't-window-shadow';
         editWindowShadow.id = 't-window-shadow';
         editWindowShadow.addEventListener("click", function (event) {
+            event.preventDefault();
             self.closeEditWindow();
         });
 

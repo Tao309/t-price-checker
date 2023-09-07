@@ -104,6 +104,7 @@ function tHtml(type) {
         editWindowShadow.className = 't-window-shadow';
         editWindowShadow.id = 't-window-shadow';
         editWindowShadow.addEventListener("click", function (event) {
+            event.preventDefault();
             self.closeEditWindow();
         });
 
