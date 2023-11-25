@@ -237,9 +237,13 @@ function tPriceChecker() {
                 var tempItems = document.querySelectorAll(pattern + ' > div');
 
                 tempItems.forEach(function (item) {
-                    priceColumn = item.querySelector('div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3)');
-                    if(!priceColumn) {return;}
-                    qtyColumn = item.lastChild;
+                    priceColumn = item.querySelector(':nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3)');
+                    if(!priceColumn || typeof priceColumn === 'undefined') {return;}
+                    qtyColumn = item.children[1];
+
+                    if (typeof qtyColumn === 'undefined') {
+                        qtyColumn = item.querySelector(':nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3)');
+                    }
 
                     self.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
                 });
@@ -314,7 +318,8 @@ function tPriceChecker() {
     };
     this.initPriceChecking = function() {
         if(this.type === TYPE_OZON) {
-            this.jsonItems = __NUXT__.state.shared.itemsTrackingInfo;
+            // this.jsonItems = __NUXT__.state.shared.itemsTrackingInfo;
+            this.jsonItems = JSON.parse($('div[id^=state-split-]').data('state')).items;
         } else if(this.type === TYPE_WILDBERRIES) {
             var name,basketStorage;
             var u = JSON.parse(window.localStorage._user_deliveries).u;
@@ -330,29 +335,44 @@ function tPriceChecker() {
             item.classList.add('t-item-checked');
             var jsonItem, productId, itemElement, currentPrice = null, title = null, qty = 1, maxQty = 0, product;
 
-            if(self.type === TYPE_OZON) {
+            if (self.type === TYPE_OZON) {
                 itemElement = item;
-                var itemTitle = item.querySelector('span.tsBodyM > span').innerHTML.trim();
+                var itemTitle = item.querySelector('span.tsBody400Small').textContent;
 
-                var foundIndex = self.jsonItems.findIndex(jsonItemIn => jsonItemIn.title === itemTitle);
+                var qtyElement = item.querySelector(self.selectors.itemQuantity).querySelector('input[inputmode="numeric"]');
 
-                if(foundIndex < 0) {
-                    console.log('Not found jsonItem for ' + itemTitle);
+                if (qtyElement) {
+                    maxQty = qtyElement.max;
+                    qty = qtyElement.value;
+                }
+
+                if (!item.querySelector(self.selectors.itemPrice).children[0]) {
+                    return;
+                }
+                var priceElement = item.querySelector(self.selectors.itemPrice).children[0].children[0].children[0];
+                if (typeof priceElement === 'undefined') {
+                    priceElement = item.querySelector(self.selectors.itemPrice).children[0].children[0];
+                }
+
+                if (typeof priceElement === 'undefined') {
                     return;
                 }
 
-                jsonItem = self.jsonItems[foundIndex];
+                // Цена с картой
+                currentPrice = self.formatPrice(priceElement.textContent);
+                if (qty > 1) {
+                    currentPrice = currentPrice / qty;
+                }
+                title = itemTitle.trim();
+                productId = title.replace(/\s/g, '_').slice(0, 50).trim();
 
-                productId = jsonItem.id;
-                maxQty = jsonItem.stockMaxQty;
-                currentPrice = jsonItem.finalPrice;
-                title = jsonItem.title.split('|')[0].trim();
-                qty = jsonItem.quantity;
-
-                if(maxQty === 0) {
+                if (maxQty === 0) {
+                    console.log('remove', item);
+                    item.closest('.t-list-item').classList.remove('t-list-item')
                     item.classList.add('t-no-stock');
                     return;
                 }
+
             } else {
                 var itemProperty = item.querySelector(self.getFindingProperty());
 
