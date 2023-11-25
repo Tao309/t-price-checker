@@ -186,6 +186,12 @@ function tPriceChecker() {
 
         (function() {
             'use strict';
+
+            if(self.type === TYPE_OZON) {
+                window.scrollTo(0, document.body.scrollHeight);
+                window.scrollTo(0, 0);
+            }
+
             var limitCount = 0;
 
             var startChecking = setInterval(function() {
