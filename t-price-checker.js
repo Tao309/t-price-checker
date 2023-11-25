@@ -195,7 +195,7 @@ function tPriceChecker() {
                     qtyColumn = item.children[1];
 
                     if (typeof qtyColumn === 'undefined') {
-                        qtyColumn = item.querySelector(':nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3)');
+                        return;
                     }
 
                     self.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
