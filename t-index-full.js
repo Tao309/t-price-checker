@@ -728,7 +728,7 @@ function tPriceChecker() {
     this.openEditCheckPriceWindow = function(el, productId) {
         this.tHtml.closeEditWindow();
         document.querySelector('body').append(this.tHtml.getWindowShadow());
-        document.querySelector('body').append(this.tHtml.getCheckPriceWindow(productId, this));
+        document.querySelector('body').append(this.tHtml.openCheckPriceWindow(productId, this, el));
     };
 }
 
@@ -894,7 +894,7 @@ function tHtml(type) {
 
         return editWindow;
     };
-    this.openCheckPriceWindow = function(productId, tPriceChecker) {
+    this.openCheckPriceWindow = function(productId, tPriceChecker, buttonElement) {
         var self = this;
         var editWindow = document.createElement("div");
         editWindow.className = 't-window-edit';
@@ -938,6 +938,7 @@ function tHtml(type) {
             resetButton.addEventListener('click', function(event) {
                 event.preventDefault();
                 tPriceChecker.tProductRepository.resetCheckPrice(productId);
+                buttonElement.classList.remove('t-check-price-available');
                 self.closeEditWindow();
             });
         }

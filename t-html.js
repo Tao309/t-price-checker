@@ -160,7 +160,7 @@ function tHtml(type) {
 
         return editWindow;
     };
-    this.openCheckPriceWindow = function(productId, tPriceChecker) {
+    this.openCheckPriceWindow = function(productId, tPriceChecker, buttonElement) {
         var self = this;
         var editWindow = document.createElement("div");
         editWindow.className = 't-window-edit';
@@ -204,6 +204,7 @@ function tHtml(type) {
             resetButton.addEventListener('click', function(event) {
                 event.preventDefault();
                 tPriceChecker.tProductRepository.resetCheckPrice(productId);
+                buttonElement.classList.remove('t-check-price-available');
                 self.closeEditWindow();
             });
         }

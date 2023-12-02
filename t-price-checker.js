@@ -681,6 +681,6 @@ function tPriceChecker() {
     this.openEditCheckPriceWindow = function(el, productId) {
         this.tHtml.closeEditWindow();
         document.querySelector('body').append(this.tHtml.getWindowShadow());
-        document.querySelector('body').append(this.tHtml.getCheckPriceWindow(productId, this));
+        document.querySelector('body').append(this.tHtml.openCheckPriceWindow(productId, this, el));
     };
 }
