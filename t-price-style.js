@@ -17,6 +17,10 @@ function tPriceStyle(initType) {
 
     .t-old-price .t-title-edit {transform: rotate(90deg); display: inline-block; margin-left: 10px;}
     .t-old-price .t-title-edit:before {content:'✎'; color: orange;}
+    
+    .t-old-price .t-check-price {display: inline-block; margin-left: 10px;}
+    .t-old-price .t-check-price:before {content:'⚠'; color: #dadada; font-size: 1.4em;}
+    .t-old-price .t-check-price.t-check-price-available:before {color: #08d106;}
 
     .t-price-arrow {font-size: 18px; font-weight:bold;}
     .t-price-arrow.not-changed {color: #0395c1;}

@@ -322,7 +322,7 @@ function tPriceChecker() {
                 if (qty > 1) {
                     currentPrice = currentPrice / qty;
                 }
-                title = itemTitle.trim();
+                title = itemTitle.split('|')[0].trim();
                 productId = title.replace(/\s/g, '_').slice(0, 50).trim();
 
                 if (maxQty === 0) {
@@ -490,7 +490,6 @@ function tPriceChecker() {
         //self.sort(buttonSortQty, 'qty');
     };
     this.sort = function(button, sortType) {
-        // @todo сортировка не работает, учитывать класс t-no-stock
         // сброc другим кнопкам up, down
         document.querySelectorAll('.t-sort-button').forEach(function(button) {
             button.classList.remove(SORT_UP);
@@ -498,6 +497,7 @@ function tPriceChecker() {
         });
 
         var items = $(this.selectors.listItem);
+        //var items = document.querySelectorAll(this.selectors.listItem);
 
         var direction = (button.getAttribute('data-sort') === SORT_UP) ? SORT_UP : SORT_DOWN;
         if (direction === SORT_UP) {
@@ -514,12 +514,12 @@ function tPriceChecker() {
             var an,bn;
             switch(sortType) {
                 case 'qty':
-                    an = a.querySelector('.t-item-qty').getAttribute('data-qty');
-                    bn = b.querySelector('.t-item-qty').getAttribute('data-qty');
+                    an = a.querySelector('.t-item-qty').getAttribute('data-qty')*1;
+                    bn = b.querySelector('.t-item-qty').getAttribute('data-qty')*1;
                     break;
                 case 'price':
-                    an = a.querySelector('.t-price-arrow').getAttribute('data-price');
-                    bn = b.querySelector('.t-price-arrow').getAttribute('data-price');
+                    an = a.querySelector('.t-price-arrow').getAttribute('data-price')*1;
+                    bn = b.querySelector('.t-price-arrow').getAttribute('data-price')*1;
                     break;
             }
 
@@ -528,13 +528,20 @@ function tPriceChecker() {
             } else {
                 return an - bn;
             }
-        }).appendTo(items.parent());
+        }).each(function(i) {
+            this.parentNode.appendChild(this);
+        });
+
+        //.appendTo(items.parent())
+
+        //items.parent().appendChild(newItems);
     };
     //get html elements
     this.getPriceElement = function(product) {
         var self = this;
         var oldMinPrice = product.oldCurrentPrice;
         var currentPrice = product.price;
+        var checkPrice = product.checkPrice ?? null;
 
         var colorClassName = 'not-changed', newMinPrice = '';
         if (currentPrice > oldMinPrice) {
@@ -593,6 +600,20 @@ function tPriceChecker() {
             self.openEditTitleWindow(event.target, product.id);
         });
         oldPricePercentDiv.append(spanEdit);
+
+        var tCheckPriceClassNames = 't-check-price t-button';
+        if (checkPrice && checkPrice >= currentPrice) {
+            tCheckPriceClassNames += ' t-check-price-available';
+        }
+        var spanCheckPrice = document.createElement("button");
+        spanCheckPrice.className = tCheckPriceClassNames;
+        spanCheckPrice.setAttribute('title', 'Set Check Price');
+        spanCheckPrice.addEventListener("click", function (event) {
+            event.preventDefault();
+            self.openEditCheckPriceWindow(event.target, product.id);
+        });
+        oldPricePercentDiv.append(spanCheckPrice);
+
         div.append(oldPricePercentDiv);
 
         this.appendHoverElements(div, product.id);
@@ -642,10 +663,13 @@ function tPriceChecker() {
         hoverField.append(divDates);
     };
     this.openEditTitleWindow = function(el, productId) {
-        var self = this;
-
         this.tHtml.closeEditWindow();
         document.querySelector('body').append(this.tHtml.getWindowShadow());
         document.querySelector('body').append(this.tHtml.getEditWindow(productId, this));
+    };
+    this.openEditCheckPriceWindow = function(el, productId) {
+        this.tHtml.closeEditWindow();
+        document.querySelector('body').append(this.tHtml.getWindowShadow());
+        document.querySelector('body').append(this.tHtml.getCheckPriceWindow(productId, this));
     };
 }

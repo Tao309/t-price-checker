@@ -153,4 +153,68 @@ function tHtml(type) {
 
         return editWindow;
     };
+    this.openCheckPriceWindow = function(productId, tPriceChecker) {
+        var self = this;
+        var editWindow = document.createElement("div");
+        editWindow.className = 't-window-edit';
+        editWindow.id = 't-window-edit';
+
+        var editBody = document.createElement("div");
+        editBody.className = 't-window-body';
+
+        var productInfo = document.createElement("div");
+        productInfo.className = 't-window-info';
+
+        var editForm = document.createElement("form");
+        var editInput = document.createElement("input");
+        editInput.type = 'text';
+        editInput.setAttribute('maxlength', '5');
+        var editSumbitButton = document.createElement("button");
+        editSumbitButton.className = 't-button t-button-submit';
+        editSumbitButton.type = 'submit';
+        editSumbitButton.textContent = 'Save';
+
+        editForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            var title = event.target.querySelector('input[type=text]').value;
+            tPriceChecker.tProductRepository.saveCheckPrice(productId, title);
+            self.closeEditWindow();
+        });
+
+        editInput.addEventListener('keyup', function(event) {
+            this.value = this.value.replace(/[^0-9\.]/g, '');
+        });
+
+        var product = tPriceChecker.tProductRepository.getProductById(productId);
+        var checkPrice = product.checkPrice;
+
+        if (checkPrice > 0) {
+            var resetButton = document.createElement("button");
+            resetButton.className = 't-button t-button-reset';
+            resetButton.textContent = 'Reset CheckPrice';
+
+            resetButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                tPriceChecker.tProductRepository.resetCheckPrice(productId);
+                self.closeEditWindow();
+            });
+        }
+
+        if (product) {
+            editInput.value = product.checkPrice ?? '';
+            productInfo.textContent = 'Set CheckPrice for: ' + tPriceChecker.tProductRepository.getSavingProductId(productId);
+        }
+
+        editForm.append(editInput);
+        editForm.append(editSumbitButton);
+        editBody.append(productInfo);
+        editBody.append(editForm);
+        if (checkPrice > 0) {
+            editBody.append(resetButton);
+        }
+        editWindow.append(editBody);
+
+        return editWindow;
+    };
 }

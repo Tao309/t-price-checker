@@ -1,5 +1,8 @@
 function tProductRepository(type) {
     this.type = type;
+    this.isFormatPrice = function(price) {
+        return price.match(/^\d+$/) && price > 0;
+    };
     this.getSavingProductId = function(productId) {
         return this.type+'-'+productId;
     };
@@ -8,6 +11,26 @@ function tProductRepository(type) {
         var product = this.getProductById(productId);
         if(!product) {return;}
         product.title = title.trim();
+
+        GM_setValue(this.getSavingProductId(productId), JSON.stringify(product));
+    };
+    this.saveCheckPrice = function(productId, checkPrice) {
+        if(typeof checkPrice === 'undefined' || !checkPrice) {return;}
+        var product = this.getProductById(productId);
+        if(!product) {return;}
+        if (!this.isFormatPrice(checkPrice)) {
+            alert(checkPrice + ' is not number.');
+            return;
+        }
+
+        product.checkPrice = checkPrice * 1;
+
+        GM_setValue(this.getSavingProductId(productId), JSON.stringify(product));
+    };
+    this.resetCheckPrice = function(productId) {
+        var product = this.getProductById(productId);
+        if(!product) {return;}
+        product.checkPrice = null;
 
         GM_setValue(this.getSavingProductId(productId), JSON.stringify(product));
     };

@@ -369,7 +369,7 @@ function tPriceChecker() {
                 if (qty > 1) {
                     currentPrice = currentPrice / qty;
                 }
-                title = itemTitle.trim();
+                title = itemTitle.split('|')[0].trim();
                 productId = title.replace(/\s/g, '_').slice(0, 50).trim();
 
                 if (maxQty === 0) {
@@ -537,7 +537,6 @@ function tPriceChecker() {
         //self.sort(buttonSortQty, 'qty');
     };
     this.sort = function(button, sortType) {
-        // @todo сортировка не работает, учитывать класс t-no-stock
         // сброc другим кнопкам up, down
         document.querySelectorAll('.t-sort-button').forEach(function(button) {
             button.classList.remove(SORT_UP);
@@ -545,6 +544,7 @@ function tPriceChecker() {
         });
 
         var items = $(this.selectors.listItem);
+        //var items = document.querySelectorAll(this.selectors.listItem);
 
         var direction = (button.getAttribute('data-sort') === SORT_UP) ? SORT_UP : SORT_DOWN;
         if (direction === SORT_UP) {
@@ -561,12 +561,12 @@ function tPriceChecker() {
             var an,bn;
             switch(sortType) {
                 case 'qty':
-                    an = a.querySelector('.t-item-qty').getAttribute('data-qty');
-                    bn = b.querySelector('.t-item-qty').getAttribute('data-qty');
+                    an = a.querySelector('.t-item-qty').getAttribute('data-qty')*1;
+                    bn = b.querySelector('.t-item-qty').getAttribute('data-qty')*1;
                     break;
                 case 'price':
-                    an = a.querySelector('.t-price-arrow').getAttribute('data-price');
-                    bn = b.querySelector('.t-price-arrow').getAttribute('data-price');
+                    an = a.querySelector('.t-price-arrow').getAttribute('data-price')*1;
+                    bn = b.querySelector('.t-price-arrow').getAttribute('data-price')*1;
                     break;
             }
 
@@ -575,13 +575,20 @@ function tPriceChecker() {
             } else {
                 return an - bn;
             }
-        }).appendTo(items.parent());
+        }).each(function(i) {
+            this.parentNode.appendChild(this);
+        });
+
+        //.appendTo(items.parent())
+
+        //items.parent().appendChild(newItems);
     };
     //get html elements
     this.getPriceElement = function(product) {
         var self = this;
         var oldMinPrice = product.oldCurrentPrice;
         var currentPrice = product.price;
+        var checkPrice = product.checkPrice ?? null;
 
         var colorClassName = 'not-changed', newMinPrice = '';
         if (currentPrice > oldMinPrice) {
@@ -640,6 +647,20 @@ function tPriceChecker() {
             self.openEditTitleWindow(event.target, product.id);
         });
         oldPricePercentDiv.append(spanEdit);
+
+        var tCheckPriceClassNames = 't-check-price t-button';
+        if (checkPrice && checkPrice >= currentPrice) {
+            tCheckPriceClassNames += ' t-check-price-available';
+        }
+        var spanCheckPrice = document.createElement("button");
+        spanCheckPrice.className = tCheckPriceClassNames;
+        spanCheckPrice.setAttribute('title', 'Set Check Price');
+        spanCheckPrice.addEventListener("click", function (event) {
+            event.preventDefault();
+            self.openEditCheckPriceWindow(event.target, product.id);
+        });
+        oldPricePercentDiv.append(spanCheckPrice);
+
         div.append(oldPricePercentDiv);
 
         this.appendHoverElements(div, product.id);
@@ -689,11 +710,14 @@ function tPriceChecker() {
         hoverField.append(divDates);
     };
     this.openEditTitleWindow = function(el, productId) {
-        var self = this;
-
         this.tHtml.closeEditWindow();
         document.querySelector('body').append(this.tHtml.getWindowShadow());
         document.querySelector('body').append(this.tHtml.getEditWindow(productId, this));
+    };
+    this.openEditCheckPriceWindow = function(el, productId) {
+        this.tHtml.closeEditWindow();
+        document.querySelector('body').append(this.tHtml.getWindowShadow());
+        document.querySelector('body').append(this.tHtml.getCheckPriceWindow(productId, this));
     };
 }
 
@@ -726,6 +750,19 @@ function tHtml(type) {
 
         return div;
     };
+    /*
+    this.getNewMinPricesInfo = function(count) {
+        if(count <= 0) {
+            return;
+        }
+
+        var div = document.createElement('div');
+        div.className = 't-changed-result min-price';
+        div.textContent = 'Новые мин цен: '+count;
+
+        return div;
+    };
+    */
     this.getPriceChangedInfo = function(count, type='up') {
         var div = document.createElement('div');
         var className = 't-changed-result ';
@@ -839,6 +876,70 @@ function tHtml(type) {
 
         return editWindow;
     };
+    this.openCheckPriceWindow = function(productId, tPriceChecker) {
+        var self = this;
+        var editWindow = document.createElement("div");
+        editWindow.className = 't-window-edit';
+        editWindow.id = 't-window-edit';
+
+        var editBody = document.createElement("div");
+        editBody.className = 't-window-body';
+
+        var productInfo = document.createElement("div");
+        productInfo.className = 't-window-info';
+
+        var editForm = document.createElement("form");
+        var editInput = document.createElement("input");
+        editInput.type = 'text';
+        editInput.setAttribute('maxlength', '5');
+        var editSumbitButton = document.createElement("button");
+        editSumbitButton.className = 't-button t-button-submit';
+        editSumbitButton.type = 'submit';
+        editSumbitButton.textContent = 'Save';
+
+        editForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            var title = event.target.querySelector('input[type=text]').value;
+            tPriceChecker.tProductRepository.saveCheckPrice(productId, title);
+            self.closeEditWindow();
+        });
+
+        editInput.addEventListener('keyup', function(event) {
+            this.value = this.value.replace(/[^0-9\.]/g, '');
+        });
+
+        var product = tPriceChecker.tProductRepository.getProductById(productId);
+        var checkPrice = product.checkPrice;
+
+        if (checkPrice > 0) {
+            var resetButton = document.createElement("button");
+            resetButton.className = 't-button t-button-reset';
+            resetButton.textContent = 'Reset CheckPrice';
+
+            resetButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                tPriceChecker.tProductRepository.resetCheckPrice(productId);
+                self.closeEditWindow();
+            });
+        }
+
+        if (product) {
+            editInput.value = product.checkPrice ?? '';
+            productInfo.textContent = 'Set CheckPrice for: ' + tPriceChecker.tProductRepository.getSavingProductId(productId);
+        }
+
+        editForm.append(editInput);
+        editForm.append(editSumbitButton);
+        editBody.append(productInfo);
+        editBody.append(editForm);
+        if (checkPrice > 0) {
+            editBody.append(resetButton);
+        }
+        editWindow.append(editBody);
+
+        return editWindow;
+    };
 }
 
 function tPriceStyle(initType) {
@@ -860,6 +961,10 @@ function tPriceStyle(initType) {
 
     .t-old-price .t-title-edit {transform: rotate(90deg); display: inline-block; margin-left: 10px;}
     .t-old-price .t-title-edit:before {content:'✎'; color: orange;}
+    
+    .t-old-price .t-check-price {display: inline-block; margin-left: 10px;}
+    .t-old-price .t-check-price:before {content:'⚠'; color: #dadada; font-size: 1.4em;}
+    .t-old-price .t-check-price.t-check-price-available:before {color: #08d106;}
 
     .t-price-arrow {font-size: 18px; font-weight:bold;}
     .t-price-arrow.not-changed {color: #0395c1;}
@@ -969,6 +1074,9 @@ function tPriceStyle(initType) {
 
 function tProductRepository(type) {
     this.type = type;
+    this.isFormatPrice = function(price) {
+        return price.match(/^\d+$/) && price > 0;
+    };
     this.getSavingProductId = function(productId) {
         return this.type+'-'+productId;
     };
@@ -977,6 +1085,26 @@ function tProductRepository(type) {
         var product = this.getProductById(productId);
         if(!product) {return;}
         product.title = title.trim();
+
+        GM_setValue(this.getSavingProductId(productId), JSON.stringify(product));
+    };
+    this.saveCheckPrice = function(productId, checkPrice) {
+        if(typeof checkPrice === 'undefined' || !checkPrice) {return;}
+        var product = this.getProductById(productId);
+        if(!product) {return;}
+        if (!this.isFormatPrice(checkPrice)) {
+            alert(checkPrice + ' is not number.');
+            return;
+        }
+
+        product.checkPrice = checkPrice * 1;
+
+        GM_setValue(this.getSavingProductId(productId), JSON.stringify(product));
+    };
+    this.resetCheckPrice = function(productId) {
+        var product = this.getProductById(productId);
+        if(!product) {return;}
+        product.checkPrice = null;
 
         GM_setValue(this.getSavingProductId(productId), JSON.stringify(product));
     };
