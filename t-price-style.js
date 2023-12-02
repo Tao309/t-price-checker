@@ -61,7 +61,7 @@ function tPriceStyle(initType) {
     .t-head-result {font-size: 16px; margin: 4px 8px; border: 1px solid #edf3f7; padding: 10px 12px; z-index: 5; background: #fff; position: absolute; left: 24%; width: 340px;}
     .t-head-info {cursor:default;}
     .t-head-result > div {margin:4px 0;}
-    .t-changed-result {padding-left: 4px;color:#bf10b9; font-weight:bold; display: inline-block;}
+    .t-changed-result {padding-left: 4px;color:#bf10b9; font-weight:bold; display: inline-block; margin-right: 4px;}
     .t-changed-result.min-price {color: #4fc78a; margin-left:8px;}
     .t-changed-result.price-up {color: red;}
     .t-changed-result.price-up:before {content:'↑';}
@@ -69,6 +69,7 @@ function tPriceStyle(initType) {
     .t-changed-result.price-down:before {content:'↓';}
     .t-changed-result.price-up:before,
     .t-changed-result.price-down:before {padding-right: 6px;}
+    .t-changed-result.check-price {color: #08d106;}
 
     .t-product-not-found {font-size: 24px; color:#f97d12;}
 

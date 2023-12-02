@@ -68,6 +68,7 @@ function tPriceChecker() {
     this.priceUpChanged = 0;// кол-во товаров с увеличенной ценой
     this.priceDownChanged = 0;// кол-во товаров с уменьшенной ценой
     this.newMinPrices = 0;// кол-во товаров с новой минимальной ценой
+    this.checkPriceCount = 0;// кол-во товаров с ценой ниже выставленной checkPrice
 
     this.config = {
         timeout: 200,
@@ -435,6 +436,7 @@ function tPriceChecker() {
         this.appendPriceChangedInfo();
         //this.appendNewMinPricesInfo();
         this.appendSortControls();
+        this.appendCheckPriceInfo();
     };
     // сейчас только на озон работает
     this.getJsonPrice = function(priceColumn) {
@@ -512,6 +514,14 @@ function tPriceChecker() {
             document.querySelector('.t-head-info').appendChild(this.tHtml.getPriceChangedInfo(this.priceDownChanged, 'down'));
             document.querySelector('.t-head-info').setAttribute('data-price-down', this.priceDownChanged);
         }
+    };
+    // блок когда цена стала ниже выставленной
+    this.appendCheckPriceInfo = function () {
+        if(this.checkPriceCount <= 0) {
+            return;
+        }
+
+        document.querySelector('.t-head-info').appendChild(this.tHtml.getCheckPriceInfo(this.checkPriceCount));
     };
     // сортировка
     this.appendSortControls = function() {
@@ -651,6 +661,7 @@ function tPriceChecker() {
         var tCheckPriceClassNames = 't-check-price t-button';
         if (checkPrice && checkPrice >= currentPrice) {
             tCheckPriceClassNames += ' t-check-price-available';
+            this.checkPriceCount++;
         }
         var spanCheckPrice = document.createElement("button");
         spanCheckPrice.className = tCheckPriceClassNames;
@@ -769,6 +780,13 @@ function tHtml(type) {
         className += (type == 'up') ? 'price-up' : 'price-down';
         div.className = className;
         div.textContent = 'цена: '+count;
+
+        return div;
+    };
+    this.getCheckPriceInfo = function(count) {
+        var div = document.createElement('div');
+        div.className = 't-changed-result check-price';
+        div.textContent = 'CheckPrice: '+count;
 
         return div;
     };
@@ -1005,7 +1023,7 @@ function tPriceStyle(initType) {
     .t-head-result {font-size: 16px; margin: 4px 8px; border: 1px solid #edf3f7; padding: 10px 12px; z-index: 5; background: #fff; position: absolute; left: 24%; width: 340px;}
     .t-head-info {cursor:default;}
     .t-head-result > div {margin:4px 0;}
-    .t-changed-result {padding-left: 4px;color:#bf10b9; font-weight:bold; display: inline-block;}
+    .t-changed-result {padding-left: 4px;color:#bf10b9; font-weight:bold; display: inline-block; margin-right: 4px;}
     .t-changed-result.min-price {color: #4fc78a; margin-left:8px;}
     .t-changed-result.price-up {color: red;}
     .t-changed-result.price-up:before {content:'↑';}
@@ -1013,6 +1031,7 @@ function tPriceStyle(initType) {
     .t-changed-result.price-down:before {content:'↓';}
     .t-changed-result.price-up:before,
     .t-changed-result.price-down:before {padding-right: 6px;}
+    .t-changed-result.check-price {color: #08d106;}
 
     .t-product-not-found {font-size: 24px; color:#f97d12;}
 

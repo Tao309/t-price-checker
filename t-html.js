@@ -49,6 +49,13 @@ function tHtml(type) {
 
         return div;
     };
+    this.getCheckPriceInfo = function(count) {
+        var div = document.createElement('div');
+        div.className = 't-changed-result check-price';
+        div.textContent = 'CheckPrice: '+count;
+
+        return div;
+    };
     this.getButtonSortQty = function() {
         var buttonSortQty = document.createElement('button');
         buttonSortQty.textContent = 'sort by qty';

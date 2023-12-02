@@ -21,6 +21,7 @@ function tPriceChecker() {
     this.priceUpChanged = 0;// кол-во товаров с увеличенной ценой
     this.priceDownChanged = 0;// кол-во товаров с уменьшенной ценой
     this.newMinPrices = 0;// кол-во товаров с новой минимальной ценой
+    this.checkPriceCount = 0;// кол-во товаров с ценой ниже выставленной checkPrice
 
     this.config = {
         timeout: 200,
@@ -388,6 +389,7 @@ function tPriceChecker() {
         this.appendPriceChangedInfo();
         //this.appendNewMinPricesInfo();
         this.appendSortControls();
+        this.appendCheckPriceInfo();
     };
     // сейчас только на озон работает
     this.getJsonPrice = function(priceColumn) {
@@ -465,6 +467,14 @@ function tPriceChecker() {
             document.querySelector('.t-head-info').appendChild(this.tHtml.getPriceChangedInfo(this.priceDownChanged, 'down'));
             document.querySelector('.t-head-info').setAttribute('data-price-down', this.priceDownChanged);
         }
+    };
+    // блок когда цена стала ниже выставленной
+    this.appendCheckPriceInfo = function () {
+        if(this.checkPriceCount <= 0) {
+            return;
+        }
+
+        document.querySelector('.t-head-info').appendChild(this.tHtml.getCheckPriceInfo(this.checkPriceCount));
     };
     // сортировка
     this.appendSortControls = function() {
@@ -604,6 +614,7 @@ function tPriceChecker() {
         var tCheckPriceClassNames = 't-check-price t-button';
         if (checkPrice && checkPrice >= currentPrice) {
             tCheckPriceClassNames += ' t-check-price-available';
+            this.checkPriceCount++;
         }
         var spanCheckPrice = document.createElement("button");
         spanCheckPrice.className = tCheckPriceClassNames;
