@@ -21,24 +21,28 @@ function tPriceConfig(initType) {
                 tPriceChecker.setSelectors({
                     listItems: '#basket_items tbody tr',
                     itemPriceHtml: '.current_price',
+                    basketHeader: '.content > h1'
                 });
                 break;
             case TYPE_OZON:
                 tPriceChecker.setSelectors({
-                    listItems: '[data-widget="split"]>div',
+                    listItems: '[data-widget="split"]:not(.t-checked) > div',
+                    basketHeader: 'div[data-widget="header"]'
                 });
                 break;
             case TYPE_WILDBERRIES:
                 tPriceChecker.setSelectors({
-                    listItems: '.basket-section .list-item:not(.not-available)',
+                    listItems: '.basket-section .list-item',
                     itemPriceHtml: '.list-item__price-new',
+                    basketHeader: '.basket-section__header-tabs'
                 });
                 break;
             case TYPE_CHITAI_GOROD:
                 tPriceChecker.setSelectors({
                     listItems: '.products__items .cart-item',
                     itemPriceHtml: '.product-price__value',
-                    title: '.product-title__head'
+                    title: '.product-title__head',
+                    basketHeader: '.cart-page .wrapper'
                 });
                 break;
         }

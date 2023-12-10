@@ -1,5 +1,6 @@
 function tPriceChecker() {
     this.type = null;
+    this.isLoaded = false;
     this.getInitType = function() {
         switch(window.location.host) {
             case 'ffan.ru':
@@ -23,6 +24,13 @@ function tPriceChecker() {
     this.newMinPrices = 0;// кол-во товаров с новой минимальной ценой
     this.checkPriceCount = 0;// кол-во товаров с ценой ниже выставленной checkPrice
 
+    this.resetCounts = function() {
+        this.priceUpChanged = 0;
+        this.priceDownChanged = 0;
+        this.newMinPrices = 0;
+        this.checkPriceCount = 0;
+    };
+
     this.config = {
         timeout: 200,
     };
@@ -30,10 +38,17 @@ function tPriceChecker() {
         this.config = Object.assign(this.config, config);
     };
     this.selectors = {
-        basketHead: '.t-basket-head',
-        listItem: '.t-list-item',
-        itemPrice: '.t-item-price-column',
-        itemQuantity: '.t-item-qty-column',
+        basketHead: 't-basket-head',
+        listItem: 't-list-item',
+        listItemNotAvailable: 't-list-item-not-available',
+        itemPrice: 't-item-price-column',
+        itemQuantity: 't-item-qty-column',
+        itemImage: 't-item-image-column',
+        headInfo: 't-head-info',
+        itemQty: 't-item-qty',
+        oldPrice: 't-old-price',
+        oldPricePercent: 't-old-price-percent',
+        itemChecked: 't-item-checked'
     };
     this.setSelectors = function(selectors) {
         this.selectors = Object.assign(this.selectors, selectors);
@@ -65,7 +80,8 @@ function tPriceChecker() {
 
                 if(typeof arguments[2] === 'undefined') {return;}
                 if(arguments[2].match(basketUrl)) {
-                    self.launch();
+                    self.isLoaded = false;
+                    self.reInit();
                 }
             };
         })();
@@ -81,6 +97,29 @@ function tPriceChecker() {
         this.tProductRepository = new tProductRepository(this.type);
         this.tHtml = new tHtml(this.type);
     };
+    this.preInitFirstTime = function() {
+        var self = this;
+
+        (function() {
+            'use strict';
+
+            if (self.type === TYPE_OZON) {
+                GM_webRequest([
+                    { selector: '*www.ozon.ru/api/entrypoint-api.bx/page/json/v2*', action: { redirect: { from: "(.*)", to: "$1" } } }
+                ], function(info, message, details) {
+                    if (self.isLoaded) {
+                        self.isLoaded = false;
+                        self.reInit();
+                    }
+                });
+
+                setTimeout(function() {
+                    window.scrollTo(0, document.body.scrollHeight);
+                    window.scrollTo(0, 0);
+                }, 100);
+            }
+        })();
+    };
     this.init = function() {
         this.type = this.getInitType();
         if(!this.type) {
@@ -91,6 +130,19 @@ function tPriceChecker() {
         this.initUrlChangedListener();
         this.initConfig();
         this.removePrevTimeFields();
+        this.preInitFirstTime();
+        this.launch();
+    };
+    this.reInit = function() {
+        this.type = this.getInitType();
+        if(!this.type) {
+            alert('Domain is not correct');
+            return;
+        }
+
+        console.log('Reinit');
+
+        this.removePrevTimeFields();
         this.launch();
     };
     // удаление элементов, добавленных с прошлого захода
@@ -98,8 +150,11 @@ function tPriceChecker() {
         var headresult = document.querySelector('.t-head-result');
         if(headresult) {headresult.remove();}
 
-        document.querySelectorAll('.t-item-qty').forEach(el => el.remove());
-        document.querySelectorAll('.t-old-price').forEach(el => el.remove());
+        document.querySelectorAll('.'+this.selectors.itemQty).forEach(el => el.remove());
+        document.querySelectorAll('.'+this.selectors.oldPrice).forEach(el => el.remove());
+        document.querySelectorAll('.t-item-checked').forEach(el => el.classList.remove('t-item-checked'));
+
+        this.resetCounts();
     };
     // запуск
     this.launch = function() {
@@ -118,36 +173,27 @@ function tPriceChecker() {
                 break;
         }
 
-        if(this.type === TYPE_OZON) {
-            (function(open) {
-                XMLHttpRequest.prototype.open = function(type, url) {
-                    this.addEventListener("readystatechange", function() {
-                        if (url === 'https://xapi.ozon.ru/dlte/multi') {
-                            setTimeout(function() {
-                                console.log('Looking for new items...');
-                                var availableItems = self.getAvailableItems();
-                                if (availableItems.length > 0) {
-                                    console.log(availableItems.length+' items are found!');
-                                    self.initPriceChecking();
-                                }
-                            }, 50)
-                        }
-                    }, false);
-                    open.apply(this, arguments);
-                };
-            })(XMLHttpRequest.prototype.open);
-        }
-
         (function() {
             'use strict';
 
-            if(self.type === TYPE_OZON) {
-                window.scrollTo(0, document.body.scrollHeight);
-                window.scrollTo(0, 0);
+            if (self.type === TYPE_OZON) {
+                GM_webRequest([
+                    { selector: '*www.ozon.ru/api/entrypoint-api.bx/page/json/v2*', action: { redirect: { from: "(.*)", to: "$1" } } }
+                ], function(info, message, details) {
+                    if (self.isLoaded) {
+                        console.log('Reinit PriceChecking');
+                        self.isLoaded = false;
+                        self.reInit();
+                    }
+                });
+
+                setTimeout(function() {
+                    window.scrollTo(0, document.body.scrollHeight);
+                    window.scrollTo(0, 0);
+                }, 100);
             }
 
             var limitCount = 0;
-
             var startChecking = setInterval(function() {
                 limitCount++;
                 var availableItems = self.getAvailableItems();
@@ -160,7 +206,10 @@ function tPriceChecker() {
                 if (availableItems.length > 0) {
                     console.log(availableItems.length+' items are found!');
                     clearInterval(startChecking);
-                    setTimeout(function() {self.initPriceChecking();}, 800);
+                    setTimeout(function() {
+                        self.initPriceChecking();
+                        self.isLoaded = true;
+                    }, 500);
                 }
 
                 if(limitCount >= 50) {
@@ -173,79 +222,113 @@ function tPriceChecker() {
     this.formatPrice = function(priceHtml) {
         return priceHtml.replace(/\D+/g, '')*1;
     };
+    // Получаем список элементов для обработки
     this.getAvailableItems = function() {
         var items = document.querySelectorAll(this.selectors.listItems);
-        if(!items.length) {return items;}
+        //if(!items.length) {return items;}
 
-        var basketHeader, priceColumn, qtyColumn, self = this;
+        var self = this,
+          basketHeader = document.querySelector(this.selectors.basketHeader);
 
-        switch(this.type) {
-            case TYPE_FFAN:
-                items.forEach(function (item) {
-                    priceColumn = item.querySelector('td.price');
-                    qtyColumn = item.querySelector('td.quantity');
+        items.forEach(function (item, i) {
+            self.handleAvailableItem(item, i);
+        });
 
-                    self.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
-                });
+        if (this.type === TYPE_OZON) {
+            basketHeader = document.querySelector(this.selectors.basketHeader).parentNode;
+            //var pattern = '[data-widget="split"]:not(.t-checked)';
 
-                basketHeader = document.querySelector('.content > h1');
-                break;
-            case TYPE_OZON:
-                var pattern = '[data-widget="split"]:not(.t-checked)';
-
-                var tempWidget = document.querySelector(pattern);
-                var tempItems = document.querySelectorAll(pattern + ' > div');
-
-                tempItems.forEach(function (item) {
-                    priceColumn = item.querySelector(':nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3)');
-                    if(!priceColumn || typeof priceColumn === 'undefined') {return;}
-                    qtyColumn = item.children[1];
-
-                    if (typeof qtyColumn === 'undefined') {
-                        return;
-                    }
-
-                    self.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
-                });
-
-                tempWidget.classList.add('t-checked');
-
-                basketHeader = document.querySelector('div[data-widget="header"]').parentNode;
-                break;
-            case TYPE_WILDBERRIES:
-                items.forEach(function (item) {
-                    priceColumn = item.querySelector('.list-item__price');
-                    qtyColumn = item.querySelector('.list-item__count');
-
-                    self.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
-                });
-
-                basketHeader = document.querySelector('.basket-section__header-tabs');
-                break;
-            case TYPE_CHITAI_GOROD:
-                items.forEach(function (item) {
-                    priceColumn = item.querySelector('.product-price');
-                    qtyColumn = item.querySelector('.cart-item__counter');
-
-                    self.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
-                });
-
-                basketHeader = document.querySelector('.cart-page .wrapper');
-                break;
+            //var tempWidget = document.querySelector(pattern);
+            // foreach
+            //tempWidget.classList.add('t-checked');
         }
 
         if (basketHeader) {
-            basketHeader.classList.add('t-basket-head');
+            basketHeader.classList.add(this.selectors.basketHead);
         }
 
         return items;
     };
-    this.addCustomClassNamesToItems = function(item, priceColumn = null, qtyColumn = null) {
-        if (!priceColumn) {return;}
+    // Получаем один элемент для обработки
+    this.handleAvailableItem = function(item, i) {
+        var priceColumn = null, qtyColumn = null, imageColumn = null;
 
-        item.classList.add('t-list-item');
-        priceColumn.classList.add('t-item-price-column');
-        qtyColumn.classList.add('t-item-qty-column');
+        switch(this.type) {
+            case TYPE_FFAN:
+                priceColumn = item.querySelector('td.price');
+                qtyColumn = item.querySelector('td.quantity');
+
+                this.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
+                break;
+            case TYPE_OZON:
+                var imageEl = null, qtyEl = null;
+                imageEl = item.querySelector('[alt="productImage"]');
+
+                if (!imageEl) {
+                    console.log('Not found imageElement for item #' + i);
+                    return;
+                }
+
+                priceColumn = item.querySelector(':nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3)');
+
+                if (!priceColumn || typeof priceColumn === 'undefined') {
+                    console.log('Not found priceColumn for item #' + i);
+                    return;
+                }
+
+                qtyEl = item.querySelector('[inputmode="numeric"]');
+
+                if (!qtyEl) {
+                    this.addCustomClassNamesToItems(item, priceColumn);
+                    return;
+                }
+
+                qtyColumn = item.children[0].children[1];
+
+                if (typeof qtyColumn === 'undefined') {
+                    console.log('Not found qtyColumn for item #' + i);
+                    return;
+                }
+
+                imageColumn = item.children[0].children[0].children[0].children[0].children[0].children[1];
+
+                this.addCustomClassNamesToItems(item, priceColumn, qtyColumn, imageColumn);
+                break;
+            case TYPE_WILDBERRIES:
+                if (item.classList.contains('not-available')) {
+                    priceColumn = item.querySelector('.list-item__count');
+                    this.addCustomClassNamesToItems(item, priceColumn);
+                    return;
+                }
+
+                priceColumn = item.querySelector('.list-item__price');
+                qtyColumn = item.querySelector('.list-item__count');
+
+                this.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
+                break;
+            case TYPE_CHITAI_GOROD:
+                priceColumn = item.querySelector('.product-price');
+                qtyColumn = item.querySelector('.cart-item__counter');
+
+                this.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
+                break;
+        }
+    };
+    this.addCustomClassNamesToItems = function(item, priceColumn = null, qtyColumn = null, imageColumn = null) {
+        if (priceColumn) {
+            priceColumn.classList.add('t-item-price-column');
+        }
+
+        if (qtyColumn) {
+            item.classList.add(this.selectors.listItem);
+            qtyColumn.classList.add('t-item-qty-column');
+        } else {
+            item.classList.add(this.selectors.listItemNotAvailable);
+        }
+
+        if (imageColumn) {
+            imageColumn.classList.add('t-item-image-column');
+        }
     };
     this.getFindingProperty = function() {
         switch(this.type) {
@@ -276,9 +359,10 @@ function tPriceChecker() {
 
         return items[0];
     };
+    // Начинаем обработку элементов
     this.initPriceChecking = function() {
         if(this.type === TYPE_OZON) {
-            // this.jsonItems = __NUXT__.state.shared.itemsTrackingInfo;
+            //this.jsonItems = __NUXT__.state.shared.itemsTrackingInfo;
             this.jsonItems = JSON.parse($('div[id^=state-split-]').data('state')).items;
         } else if(this.type === TYPE_WILDBERRIES) {
             var name,basketStorage;
@@ -290,14 +374,47 @@ function tPriceChecker() {
 
         var self = this;
 
+        // Обработка позиций в наличии
         document.querySelectorAll(self.selectors.listItem).forEach(function(item, i) {
-            if(item.classList.contains('t-item-checked')) {return;}
-            item.classList.add('t-item-checked');
-            var jsonItem, productId, itemElement, currentPrice = null, title = null, qty = 1, maxQty = 0, product;
+            self.initOnePosition(item, i);
+        });
 
-            if (self.type === TYPE_OZON) {
-                itemElement = item;
+        // Обработка позиций недоступных
+        document.querySelectorAll('.'+self.selectors.listItemNotAvailable).forEach(function(item, i) {
+            self.initOnePosition(item, i);
+        });
+
+        this.appendHeadElement();
+        this.appendPriceChangedInfo();
+        //this.appendNewMinPricesInfo();
+        this.appendSortControls();
+        this.appendCheckPriceInfo();
+    };
+    // Начинаем обработку одного элемента
+    this.initOnePosition = function(item, i) {
+        var self = this, jsonItem, productId, currentPrice = null, title = null, qty = 1, maxQty = 0, product, isNotAvailable = false;
+
+        if(item.classList.contains('t-item-checked')) {return;}
+        item.classList.add('t-item-checked');
+
+        var itemIdProperty = item.querySelector(self.getFindingProperty());
+
+        switch(self.type) {
+            case TYPE_OZON:
+                if (item.classList.contains(self.selectors.listItemNotAvailable)) {
+                    productId = item.querySelector('[alt="productImage"]').src.split('/').pop().split('.')[0];
+                    isNotAvailable = true;
+                    break;
+                }
+
                 var itemTitle = item.querySelector('span.tsBody400Small').textContent;
+
+                title = itemTitle.split('|')[0].trim();
+                productId = item.querySelector('.'+self.selectors.itemImage).querySelector('img').src.split('/').pop().split('.')[0];
+
+                if (typeof productId === 'undefined' || !productId) {
+                    productId = title.replace(/\s/g, '_').slice(0, 50).trim();
+                }
 
                 var qtyElement = item.querySelector(self.selectors.itemQuantity).querySelector('input[inputmode="numeric"]');
 
@@ -309,10 +426,14 @@ function tPriceChecker() {
                 if (!item.querySelector(self.selectors.itemPrice).children[0]) {
                     return;
                 }
+
                 var priceElement = item.querySelector(self.selectors.itemPrice).children[0].children[0].children[0];
                 if (typeof priceElement === 'undefined') {
                     priceElement = item.querySelector(self.selectors.itemPrice).children[0].children[0];
                 }
+
+                priceElement.style.color = '#242424';
+                priceElement.style.backgroundColor = '';
 
                 if (typeof priceElement === 'undefined') {
                     return;
@@ -323,8 +444,6 @@ function tPriceChecker() {
                 if (qty > 1) {
                     currentPrice = currentPrice / qty;
                 }
-                title = itemTitle.split('|')[0].trim();
-                productId = title.replace(/\s/g, '_').slice(0, 50).trim();
 
                 if (maxQty === 0) {
                     console.log('remove', item);
@@ -332,64 +451,61 @@ function tPriceChecker() {
                     item.classList.add('t-no-stock');
                     return;
                 }
-
-            } else {
-                var itemProperty = item.querySelector(self.getFindingProperty());
-
-                switch(self.type) {
-                    case TYPE_WILDBERRIES:
-                        if(item.classList.contains('not-available')) {return;}
-                        productId = itemProperty.getAttribute('data-nm');
-
-                        //stocks
-                        jsonItem = self.getJsonItemByCode(productId);
-                        if(!jsonItem) {return;}
-                        jsonItem.stocks.forEach(function(stock) {
-                            maxQty += stock.qty;
-                        });
-
-                        title = jsonItem.goodsName;
-                        qty = jsonItem.quantity;
-                        break;
-                    case TYPE_CHITAI_GOROD:
-                        productId = itemProperty.getAttribute('href').replace("/product/", "");
-                        title = item.querySelector(self.selectors.title).innerHTML.trim();
-
-                        if (item.querySelector('.product-quantity__counter')) {
-                            maxQty = item.querySelector('.product-quantity__counter').getAttribute('max');
-                        }
-                        if(item.querySelector('.product-quantity__counter')) {
-                            qty = item.querySelector('.product-quantity__counter').value;
-                        }
-                        break;
-                    case TYPE_FFAN:
-                        productId = itemProperty.getAttribute('href').replace("/catalog/fiction/", "");
-                        productId = productId.replace("/", '');
-                        maxQty = item.querySelector('.inp_style').getAttribute('max');
-                        title = item.querySelector('.item .bx_ordercart_itemtitle a').innerHTML.trim()
-                        qty = item.querySelector('input.inp_style').value;
-                        break;
+                break;
+            case TYPE_WILDBERRIES:
+                if (item.classList.contains(self.selectors.listItemNotAvailable)) {
+                    isNotAvailable = true;
+                    productId = item.querySelector('.list-item__good-img').getAttribute('href').split('/')[2];
+                    break;
+                } else {
+                    productId = itemIdProperty.getAttribute('data-nm');
                 }
 
-                itemElement = itemProperty.closest(self.selectors.listItem);
-                var itemPriceNew = itemElement.querySelector(self.selectors.itemPriceHtml);
-                if (itemPriceNew) {
-                    currentPrice = self.formatPrice(itemPriceNew.innerHTML) / qty;
+                //stocks
+                jsonItem = self.getJsonItemByCode(productId);
+                if(!jsonItem) {return;}
+                jsonItem.stocks.forEach(function(stock) {
+                    maxQty += stock.qty;
+                });
+
+                title = jsonItem.goodsName;
+                qty = jsonItem.quantity;
+                break;
+            case TYPE_CHITAI_GOROD:
+                productId = itemIdProperty.getAttribute('href').replace("/product/", "");
+                title = item.querySelector(self.selectors.title).innerHTML.trim();
+
+                if (item.querySelector('.product-quantity__counter')) {
+                    maxQty = item.querySelector('.product-quantity__counter').getAttribute('max');
                 }
-            }
+                if(item.querySelector('.product-quantity__counter')) {
+                    qty = item.querySelector('.product-quantity__counter').value;
+                }
+                break;
+            case TYPE_FFAN:
+                productId = itemIdProperty.getAttribute('href').replace("/catalog/fiction/", "");
+                productId = productId.replace("/", '');
+                maxQty = item.querySelector('.inp_style').getAttribute('max');
+                title = item.querySelector('.item .bx_ordercart_itemtitle a').innerHTML.trim()
+                qty = item.querySelector('input.inp_style').value;
+                break;
+        }
 
-            if(currentPrice) {
-                product = self.tProductRepository.initProduct(productId, currentPrice, title);
-                self.appendOldMinPrice(product, itemElement);
-                self.appendMaxQty(itemElement, maxQty);
+        if (self.type !== TYPE_OZON) {
+            var itemPrice = item.querySelector(self.selectors.itemPriceHtml);
+            if (itemPrice) {
+                currentPrice = self.formatPrice(itemPrice.innerHTML) / qty;
             }
-        });
+        }
 
-        this.appendHeadElement();
-        this.appendPriceChangedInfo();
-        //this.appendNewMinPricesInfo();
-        this.appendSortControls();
-        this.appendCheckPriceInfo();
+        if (currentPrice) {
+            product = self.tProductRepository.initProduct(productId, currentPrice, title);
+            self.appendOldMinPrice(product, item);
+            self.appendMaxQty(item, maxQty);
+        } else if (isNotAvailable) {
+            product = self.tProductRepository.getProductById(productId);
+            self.appendOldMinPrice(product, item);
+        }
     };
     // сейчас только на озон работает
     this.getJsonPrice = function(priceColumn) {
@@ -419,7 +535,7 @@ function tPriceChecker() {
     };
     // append elements
     this.appendOldMinPrice = function(product, itemElement) {
-        var priceEl = itemElement.querySelector(this.selectors.itemPrice);
+        var priceEl = itemElement.querySelector('.'+this.selectors.itemPrice);
         if(!priceEl) {return;}
         priceEl.classList.add('t-position-relative');
         priceEl.appendChild(this.getPriceElement(product));
@@ -429,7 +545,7 @@ function tPriceChecker() {
             return;
         }
 
-        var qtyEl = itemElement.querySelector(this.selectors.itemQuantity);
+        var qtyEl = itemElement.querySelector('.'+this.selectors.itemQuantity);
         qtyEl.appendChild(this.tHtml.getQtyElement(maxQty));
     };
     this.appendHeadElement = function() {
@@ -447,25 +563,25 @@ function tPriceChecker() {
         div.className = 't-head-result';
 
         var divInfo = document.createElement('div');
-        divInfo.className = 't-head-info';
+        divInfo.className = this.selectors.headInfo;
         div.appendChild(divInfo);
 
         var divSort = document.createElement('div');
         divSort.className = 't-head-sort';
         div.appendChild(divSort);
 
-        document.querySelector(this.selectors.basketHead).position = 'relative';
-        document.querySelector(this.selectors.basketHead).appendChild(div);
+        document.querySelector('.'+this.selectors.basketHead).position = 'relative';
+        document.querySelector('.'+this.selectors.basketHead).appendChild(div);
     };
     this.appendPriceChangedInfo = function() {
         if(this.priceUpChanged > 0) {
-            document.querySelector('.t-head-info').appendChild(this.tHtml.getPriceChangedInfo(this.priceUpChanged, 'up'));
-            document.querySelector('.t-head-info').setAttribute('data-price-up', this.priceUpChanged);
+            document.querySelector('.'+this.selectors.headInfo).appendChild(this.tHtml.getPriceChangedInfo(this.priceUpChanged, 'up'));
+            document.querySelector('.'+this.selectors.headInfo).setAttribute('data-price-up', this.priceUpChanged);
         }
 
         if(this.priceDownChanged > 0) {
-            document.querySelector('.t-head-info').appendChild(this.tHtml.getPriceChangedInfo(this.priceDownChanged, 'down'));
-            document.querySelector('.t-head-info').setAttribute('data-price-down', this.priceDownChanged);
+            document.querySelector('.'+this.selectors.headInfo).appendChild(this.tHtml.getPriceChangedInfo(this.priceDownChanged, 'down'));
+            document.querySelector('.'+this.selectors.headInfo).setAttribute('data-price-down', this.priceDownChanged);
         }
     };
     // блок когда цена стала ниже выставленной
@@ -474,12 +590,12 @@ function tPriceChecker() {
             return;
         }
 
-        document.querySelector('.t-head-info').appendChild(this.tHtml.getCheckPriceInfo(this.checkPriceCount));
+        document.querySelector('.'+this.selectors.headInfo).appendChild(this.tHtml.getCheckPriceInfo(this.checkPriceCount));
     };
     // сортировка
     this.appendSortControls = function() {
         var self = this;
-        var items = document.querySelectorAll(self.selectors.listItem);
+        var items = document.querySelectorAll('.'+self.selectors.listItem);
         if(items.length < 2) {return;}
 
         var buttonSortQty = this.tHtml.getButtonSortQty();
@@ -500,13 +616,14 @@ function tPriceChecker() {
         //self.sort(buttonSortQty, 'qty');
     };
     this.sort = function(button, sortType) {
+        var self = this;
         // сброc другим кнопкам up, down
         document.querySelectorAll('.t-sort-button').forEach(function(button) {
             button.classList.remove(SORT_UP);
             button.classList.remove(SORT_DOWN);
         });
 
-        var items = $(this.selectors.listItem);
+        var items = $('.'+this.selectors.listItem);
         //var items = document.querySelectorAll(this.selectors.listItem);
 
         var direction = (button.getAttribute('data-sort') === SORT_UP) ? SORT_UP : SORT_DOWN;
@@ -524,8 +641,8 @@ function tPriceChecker() {
             var an,bn;
             switch(sortType) {
                 case 'qty':
-                    an = a.querySelector('.t-item-qty').getAttribute('data-qty')*1;
-                    bn = b.querySelector('.t-item-qty').getAttribute('data-qty')*1;
+                    an = a.querySelector('.'+self.selectors.itemQty).getAttribute('data-qty')*1;
+                    bn = b.querySelector('.'+self.selectors.itemQty).getAttribute('data-qty')*1;
                     break;
                 case 'price':
                     an = a.querySelector('.t-price-arrow').getAttribute('data-price')*1;
@@ -569,10 +686,10 @@ function tPriceChecker() {
         var oldPriceForElement = oldMinPrice;
 
         var div = document.createElement("div");
-        div.className = 't-old-price';
+        div.className = self.selectors.oldPrice;
 
         var oldPricePercentDiv = document.createElement("div");
-        oldPricePercentDiv.className = 't-old-price-percent';
+        oldPricePercentDiv.className = self.selectors.oldPricePercent;
 
         var span = document.createElement("span");
         span.className = 't-price-arrow '+colorClassName;
@@ -642,6 +759,7 @@ function tPriceChecker() {
     };
     this.appendSameProducts = function(hoverField, productId, parentEl) {
         var product = this.tProductRepository.getProductById(productId);
+        if (!product) {return;}
         var foundProducts = this.tProductRepository.getProductsBySameTitle(product);
         if(!foundProducts.length) {return;}
         var el = this.tHtml.getSameProducts(foundProducts, product);
