@@ -1,9 +1,45 @@
 function tHtml(type) {
     this.type = type;
+    this.checkerElements = {
+        'check-price': {label: 'отслеживаемые'},
+        'price-decrease': {label: 'понижение'},
+        'returns': {label: 'снова в продаже'}
+    };
+
+    this.createElement = function (type, data = {}) {
+        if (!isExists(type)) {
+            console.log('Create element type {' + type + '} is not exists');
+            return;
+        }
+
+        if (!['div', 'span', 'a', 'button'].includes(type)) {
+            console.log('Create element type {' + type + '} is not available');
+            return;
+        }
+
+        var el = document.createElement(type);
+
+        if (isExists(data.class)) {el.className = data.class;}
+        if (isExists(data.className)) {el.className = data.className;}
+        if (isExists(data.id)) {el.id = data.id;}
+        if (isExists(data.type)) {el.type = data.type;}
+        if (isExists(data.placeholder)) {el.placeholder = data.placeholder;}
+        if (isExists(data.value)) {el.value = data.value;}
+        if (isExists(data.src)) {el.src = data.src;}
+        if (isExists(data.name)) {el.name = data.name;}
+        if (isExists(data.textContent)) {el.textContent = data.textContent;}
+        if (isExists(data.content)) {el.content = data.textContent;}
+        if (isExists(data.title)) {el.title = data.title;}
+
+        return el;
+    }
+
     this.getShopLinkForProduct = function(product) {
         var productId = product.id;
 
         switch(product.type) {
+            case TYPE_KNIGOFAN:
+                return 'https://knigofan.ru/catalog/horus-heresy/primarkhi/929/';
             case TYPE_WILDBERRIES:
                 return 'https://www.wildberries.ru/catalog/'+productId+'/detail.aspx';
             case TYPE_OZON:
@@ -13,17 +49,34 @@ function tHtml(type) {
             case TYPE_CHITAI_GOROD:
                 return 'https://www.chitai-gorod.ru/product/'+productId;
         }
-
     };
-    this.getQtyElement = function(qty) {
-        var div = document.createElement("div");
-        div.className = 't-item-qty';
+    this.getQtyElement = function(qty, product) {
+        var div = this.createElement('div', {
+            className: 't-item-qty'
+        });
         div.setAttribute('data-qty', qty);
 
-        var span = document.createElement("span");
-        span.textContent = 'Всего: '+qty;
+        var span = this.createElement('div');
+        var textContent = qty;
+        if (!isEmpty(product.maxQty)) {
+            textContent += ' / ' + product.maxQty;
+        }
+
+        if (qty === 0 && !isEmpty(product.maxQty)) {
+            textContent = 'Было: ' + product.maxQty;
+        }
+
+        span.textContent = textContent
 
         div.append(span);
+
+        if (!isEmpty(product.maxQtyDate)) {
+            var spanDate = this.createElement('div', {
+                textContent: formatDate(new Date(product.maxQtyDate), true),
+                className: 't-item-max-qty-date'
+            });
+            div.append(spanDate);
+        }
 
         return div;
     };
@@ -56,6 +109,51 @@ function tHtml(type) {
 
         return div;
     };
+    this.getQtyLimitInfo = function(productsCount, qtyLimit) {
+        var div = document.createElement('div');
+        div.className = 't-changed-result products-count';
+        div.innerHTML = '<p>Products: '+productsCount+'</p>';
+        if (qtyLimit[5] > 0) {
+            div.innerHTML += '<p>< 5: '+qtyLimit[5]+'</p>';
+        }
+        if (qtyLimit[10] > 0) {
+            div.innerHTML += '<p>< 10: '+qtyLimit[10]+'</p>';
+        }
+        if (qtyLimit[20] > 0) {
+            div.innerHTML+= '<p>< 20: '+qtyLimit[20]+'</p>';
+        }
+        if (qtyLimit[50] > 0) {
+            div.innerHTML += '<p>< 50: '+qtyLimit[50]+'</p>';
+        }
+        if (qtyLimit[100] > 0) {
+            div.innerHTML += '<p>< 100: '+qtyLimit[100]+'</p>';
+        }
+
+        return div;
+    };
+
+    this.getCheckerElementId = function (type) {
+        return 'show_' + type.replaceAll('-', '_');
+    }
+    this.getCheckerElement = function (type, count) {
+        var elementProp = this.checkerElements[type];
+
+        if (typeof elementProp === 'undefined' || !elementProp) {
+            console.log('Not found checkerElement properties for ' + type);
+            return;
+        }
+
+        var checkboxId = this.getCheckerElementId(type);
+
+        var div = document.createElement('div');
+        div.className = 't-changed-result products-' + type;
+        div.innerHTML += '<label for="' + checkboxId + '">' +
+          '<input type="checkbox" id="' + checkboxId + '" /> '
+          + elementProp.label + ' (' + count + ')</label>';
+
+        return div;
+    }
+
     this.getButtonSortQty = function() {
         var buttonSortQty = document.createElement('button');
         buttonSortQty.textContent = 'sort by qty';
@@ -64,11 +162,18 @@ function tHtml(type) {
         return buttonSortQty;
     };
     this.getButtonSortPrice = function() {
-        var buttonSortPrce = document.createElement('button');
-        buttonSortPrce.textContent = 'sort by price';
-        buttonSortPrce.className = 't-sort-button t-sort-price';
+        var buttonSortPrice = document.createElement('button');
+        buttonSortPrice.textContent = 'sort by price';
+        buttonSortPrice.className = 't-sort-button t-sort-price';
 
-        return buttonSortPrce;
+        return buttonSortPrice;
+    };
+    this.getButtonSortTitlePrice = function() {
+        var buttonSortTitlePrice = document.createElement('button');
+        buttonSortTitlePrice.textContent = 'sort by title/price';
+        buttonSortTitlePrice.className = 't-sort-button t-sort-title-price';
+
+        return buttonSortTitlePrice;
     };
     this.getSameProduct = function(foundProduct, product) {
         var productDiv = document.createElement("div");

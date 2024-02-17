@@ -21,7 +21,21 @@ function tPriceStyle(initType) {
     .t-old-price .t-check-price {display: inline-block; margin-left: 10px;}
     .t-old-price .t-check-price:before {content:'⚠'; color: #dadada; font-size: 1.4em;}
     .t-old-price .t-check-price.t-check-price-available:before {color: #08d106;}
+    
+    .t-old-price .remove-from-storage-button {display:none;position:absolute;font-size: 18px; font-weight:bold;color:red;margin-left:14px;}
+    .t-old-price .remove-from-storage-button:before {content: '✖';}
+    .t-old-price:hover .remove-from-storage-button {display:inline-block;}
+    
+    .t-list-item {position: relative; margin: 4px 0;}
+    .t-list-item::before {content:''; width: 4px; height: 100%; position: absolute; left: -8px; top: 0;background-color: #028502;opacity: 0.7;}
+    .t-list-item.t-limit-count-5::before {background-color: #e50303;}
+    .t-list-item.t-limit-count-10::before {background-color: #e53803;}
+    .t-list-item.t-limit-count-20::before {background-color: #e56103;}
+    .t-list-item.t-limit-count-50::before {background-color: #008062;}
 
+    .t-list-item-not-available .t-old-price {position: relative;}
+    .t-list-item-not-available .t-item-qty {padding-left: 20px;}
+    
     .t-price-arrow {font-size: 18px; font-weight:bold;}
     .t-price-arrow.not-changed {color: #0395c1;}
     .t-price-arrow.not-changed:before {content: '✓';}
@@ -30,11 +44,12 @@ function tPriceStyle(initType) {
     .t-price-arrow.down {color: green;}
     .t-price-arrow.down:before {content: '↓';}
     .t-price-arrow.up:before, .t-price-arrow.down:before {padding-right: 4px;}
-    .t-old-price-percent {text-align:left;width:100px;}
+    .t-old-price-percent {text-align:left;width:100px;position:relative;}
     .t-price-percent {font-size:14px;padding-left: 5px;color:#707070;}
 
     .t-old-price {position: absolute; top:0; cursor:default; width: 140px; padding-left: 35px;}
     .t-old-price > span {display:block;text-align:left;}
+    .t-old-price > .unavailable-info {font-size: 10px; margin-bottom: 4px; width: 140px;font-size: 12px;color: #a92424;}
     .t-old-price > .t-price-old-date {font-size: 10px; margin-bottom: 4px;}
     .t-new-min-price {position: absolute; left:30px; top:30px; color: #4fc78a;}
     .t-old-price .t-hover-field {z-index:5; position:absolute; left: -130px; top:0; width: 160px; display:none;}
@@ -58,25 +73,32 @@ function tPriceStyle(initType) {
     .t-same-products .t-same-product a.down:after {content: '↓';}
     .t-same-products .t-same-product a:hover {color: #0395c1;}
 
-    .t-head-result {font-size: 16px; margin: 4px 8px; border: 1px solid #edf3f7; padding: 10px 12px; z-index: 5; background: #fff; position: absolute; left: 24%; width: 340px;}
-    .t-head-info {cursor:default;}
-    .t-head-result > div {margin:4px 0;}
-    .t-changed-result {padding-left: 4px;color:#bf10b9; font-weight:bold; display: inline-block; margin-right: 4px;}
+    .t-head-result {font-size: 16px; border: 1px solid #edf3f7; padding: 4px; z-index: 5; background: #fff; position: fixed; left: 0; top: 136px;
+        width: 220px;
+        border-radius: 8px;
+    }
+    .t-head-result > div {margin:8px 0;}
+    .t-changed-result {color: #707783; padding-left: 4px; margin-right: 4px;}
     .t-changed-result.min-price {color: #4fc78a; margin-left:8px;}
-    .t-changed-result.price-up {color: red;}
+    .t-changed-result.price-up {color: red; font-weight: bold;}
     .t-changed-result.price-up:before {content:'↑';}
-    .t-changed-result.price-down {color: green;}
+    .t-changed-result.price-down {color: green; font-weight: bold;}
     .t-changed-result.price-down:before {content:'↓';}
     .t-changed-result.price-up:before,
     .t-changed-result.price-down:before {padding-right: 6px;}
     .t-changed-result.check-price {color: #08d106;}
+    .t-changed-result.products-count {color: #c2c2c2;}
+    .t-changed-result.products-count {margin: 0; color: #727272; font-size: 0.9rem; font-weight: normal;}
+    .t-changed-result.products-count > p {margin: 0;}
+    .t-changed-result > label:hover {cursor: pointer;}
 
     .t-product-not-found {font-size: 24px; color:#f97d12;}
 
     .t-position-relative {position: relative;}
-    .t-item-qty {color: #af07af; margin:8px 0 0 4px;}
+    .t-item-qty {color: #af07af; margin:8px 0 0 10px;}
+    .t-item-qty .t-item-max-qty-date {color: #707070; font-size: 0.8rem; margin-top: 2px;}
 
-    .t-sort-button {font-size: 16px; color: #707783; margin: 0 4px; border: 1px solid #edf3f7; border-radius: 4px; background: white; padding: 4px 8px;}
+    .t-sort-button {font-size: 16px; color: #707783; margin: 0 2px; border: 1px solid #edf3f7; border-radius: 4px; background: white; padding: 4px; line-height: normal;}
     .t-sort-button:hover {cursor: pointer; background: #828997; color: #edf3f7;}
     .t-sort-button.up,.t-sort-button.down {background: #707783; color: #edf3f7;}
     .t-sort-button:before {padding-right: 6px;}
@@ -86,35 +108,77 @@ function tPriceStyle(initType) {
     .t-sort-button.down:before {content: '↓'; }
     .t-sort-button.t-sort-qty {}
     .t-sort-button.t-sort-price {}
+    
+    .t-head-search {
+        border: 1px solid #edf3f7;
+        border-radius: 4px;
+        width: 200px;
+        position: relative;
+        overflow: hidden;
+        padding: 4px 0;
+    }
+    .t-head-search .search-input {
+        border: none;
+        width: 178px;
+        display: inline-block;
+        padding: 2px 8px;
+    }
+    .t-head-search .search-reset {
+        color: #707783;
+        width: 29px;
+        position: absolute;
+        top: 0;
+        right: 0;
+        border: 0;
+        height: 100%;
+    }
+    .t-head-search .search-reset:hover {color: #edf3f7;background: #707783;cursor:pointer;}
+        
+    
     </style>`;
         this.addTypeStyles();
     };
     this.addTypeStyles = function() {
         switch(this.type) {
+            case TYPE_KNIGOFAN:
+                this.appendCssStyles(`<style>
+                    .t-old-price {position: relative; top: 5px; padding-left: 0;}
+                    .t-list-item > td {padding: 22px 0 14px 0!important;}
+                    .t-list-item > td.basket-items-list-item-price {padding: 22px 0 14px 20px!important;}
+                </style>`);
+                break;
             case TYPE_OZON:
                 this.appendCssStyles(`<style>
+                    .t-list-item {margin: 2px 0;}
                     .t-old-price {position: relative; left: -40px; top: 10px;}
-                    .t-head-result {left:150px; top:-20px;}
+                    .t-head-result {}
+                    .t-item-qty {margin-left: 35px;}
                 </style>`);
                 break;
             case TYPE_WILDBERRIES:
                 this.appendCssStyles(`<style>
-                   .t-head-result {left: 190px; width: 260px; top: -20px;}
+                   .t-list-item {margin: 4px 0;}
+                   .t-head-result {}
+                   .t-item-qty {margin-left: 18px;}
                 </style>`);
                 break;
             case TYPE_CHITAI_GOROD:
                 this.appendCssStyles(`<style>
-                   .t-head-result {left:300px;}
+                   .t-head-result {left: 16px; top: 210px;}
                    .t-old-price {position: relative; left: 40px; top:4px;}
 
                    .cart-item__content-right .cart-item__actions {right: -50px!important; top:125px!important;}
                    .product-price__value--discount {color: #424242!important;}
                    .t-item-qty {margin: 20px 0 0 4px;}
+                   
+                   .t-list-item {margin-bottom: 6px!important;}
+                   
+                   .show_available_to_buy:hover {cursor: pointer;}
                 </style>`);
                 break;
             case TYPE_FFAN:
                 this.appendCssStyles(`<style>
-                    .t-head-result {left: 180px;top: -25px;}
+                    .t-head-result {}
                     #basket_items td.quantity {position:relative;}
                     .t-item-qty {left: 4px; top: 22px; position: absolute;}
                     .t-item-qty span {display:block!important;}

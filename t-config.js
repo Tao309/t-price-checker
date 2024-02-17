@@ -2,6 +2,7 @@ const TYPE_OZON = 'ozon';//www.ozon.ru
 const TYPE_WILDBERRIES = 'wildberries';//www.wildberries.ru
 const TYPE_CHITAI_GOROD = 'chitai-gorod';//www.chitai-gorod.ru
 const TYPE_FFAN = 'ffan';//ffan.ru
+const TYPE_KNIGOFAN = 'knigofan';//knigofan.ru
 
 const SORT_UP = 'up';
 const SORT_DOWN = 'down';
@@ -17,6 +18,12 @@ function tPriceConfig(initType) {
     };
     this.initSelectors = function(tPriceChecker) {
         switch(this.type) {
+            case TYPE_KNIGOFAN:
+                tPriceChecker.setSelectors({
+                    listItems: '#basket-item-table .basket-items-list-item-container',
+                    basketHeader: '.main-title'
+                });
+                break;
             case TYPE_FFAN:
                 tPriceChecker.setSelectors({
                     listItems: '#basket_items tbody tr',
@@ -47,4 +54,48 @@ function tPriceConfig(initType) {
                 break;
         }
     };
+}
+
+function formatNumber(value) {
+    if (typeof value === 'number') {
+        return value;
+    }
+
+    return value.replace(/\D+/g, '')*1;
+}
+
+function formatProductTitle(value) {
+    return value.replace(/"/g, '').trim();
+}
+
+function formatDate(date, onlyDate = false) {
+    if (onlyDate) {
+        return date.getUTCDate() + '.' + (date.getUTCMonth() + 1) + '.' + date.getUTCFullYear();
+    }
+
+    return date.getUTCDate() + '.' + (date.getUTCMonth() + 1) + '.' + date.getUTCFullYear()
+        + ' ' + date.getUTCHours() + ':' + date.getUTCMinutes() + ':' + date.getUTCSeconds();
+}
+
+function startTimeout(fn, timeout = 1) {
+    setTimeout(function() {
+        fn();
+    }, timeout);
+}
+
+function parseUrlParams(url) {
+    return url.split('?').pop().split('&')
+        .map(param => param.split('='))
+        .reduce((values, [ key, value ]) => {
+            values[ key ] = value
+            return values
+        }, {})
+}
+
+function isExists(field) {
+    return typeof field !== 'undefined';
+}
+
+function isEmpty(field) {
+    return !isExists(field) || field === null;
 }

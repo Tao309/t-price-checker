@@ -3,6 +3,8 @@ function tPriceChecker() {
     this.isLoaded = false;
     this.getInitType = function() {
         switch(window.location.host) {
+            case 'knigofan.ru':
+                return TYPE_KNIGOFAN;
             case 'ffan.ru':
                 return TYPE_FFAN;
             case 'www.ozon.ru':
@@ -18,17 +20,35 @@ function tPriceChecker() {
         }
     };
     this.addBasketHead = true;
+    this.responseInterceptEnabled = []
 
     this.priceUpChanged = 0;// кол-во товаров с увеличенной ценой
     this.priceDownChanged = 0;// кол-во товаров с уменьшенной ценой
-    this.newMinPrices = 0;// кол-во товаров с новой минимальной ценой
-    this.checkPriceCount = 0;// кол-во товаров с ценой ниже выставленной checkPrice
+    this.checkPriceCount = 0;// кол-во товаров с ценой, ниже отслеживаемой
+    this.checkReturnsCount = 0;// кол-во товаров, которые снова появились в продаже
 
     this.resetCounts = function() {
         this.priceUpChanged = 0;
         this.priceDownChanged = 0;
-        this.newMinPrices = 0;
         this.checkPriceCount = 0;
+        this.checkReturnsCount = 0;
+        this.productsCount = 0;
+        this.qtyLimit = {
+            '5': 0,
+            '10': 0,
+            '20': 0,
+            '50': 0
+        };
+    };
+
+    // Количество доступных к покупке товаров в корзине
+    this.productsCount = 0;
+    // Сколько товаров осталось меньше чем
+    this.qtyLimit = {
+        '5': 0,
+        '10': 0,
+        '20': 0,
+        '50': 0
     };
 
     this.config = {
@@ -58,6 +78,9 @@ function tPriceChecker() {
     this.tPriceStyle;// класс со стилями
     this.tProductRepository// работа с продуктами
     this.tHtml;// создание html элементов
+    this.tResponseInterceptor;// перехватчик ответов по xhr, fetch
+    this.tEventListener;// слушатель эвентов
+    this.tProduct;// класс позиции
 
     this.getBasketUrl = function() {
         switch(this.type) {
@@ -96,6 +119,16 @@ function tPriceChecker() {
 
         this.tProductRepository = new tProductRepository(this.type);
         this.tHtml = new tHtml(this.type);
+
+        this.tEventListener = new tEventListener(this.type);
+        this.tEventListener.init();
+
+        this.tProduct = new tProduct();
+
+        if (this.isResponseInterceptEnabled()) {
+            console.log('!!!!!!! ResponseInterceptEnabled !!!!!!!');
+            this.tResponseInterceptor = (new tResponseInterceptor(this.type, this)).init();
+        }
     };
     this.preInitFirstTime = function() {
         var self = this;
@@ -103,6 +136,7 @@ function tPriceChecker() {
         (function() {
             'use strict';
 
+            /*
             if (self.type === TYPE_OZON) {
                 GM_webRequest([
                     { selector: '*www.ozon.ru/api/entrypoint-api.bx/page/json/v2*', action: { redirect: { from: "(.*)", to: "$1" } } }
@@ -118,19 +152,27 @@ function tPriceChecker() {
                     window.scrollTo(0, 0);
                 }, 100);
             }
+            */
         })();
     };
-    this.init = function() {
+    this.init = function(responseInterceptors) {
         this.type = this.getInitType();
         if(!this.type) {
             alert('Domain is not correct');
             return;
         }
 
-        this.initUrlChangedListener();
+        this.responseInterceptEnabled[this.type] = responseInterceptors.includes(this.type);
+
+        //this.initUrlChangedListener();
         this.initConfig();
         this.removePrevTimeFields();
         this.preInitFirstTime();
+
+        if (this.isResponseInterceptEnabled()) {
+            return;
+        }
+
         this.launch();
     };
     this.reInit = function() {
@@ -142,10 +184,16 @@ function tPriceChecker() {
 
         console.log('Reinit');
 
+        this.initConfig();
         this.removePrevTimeFields();
+        this.preInitFirstTime();
         this.launch();
     };
-    // удаление элементов, добавленных с прошлого захода
+    // Включён ли обработки ответа сервера для типа магазина
+    this.isResponseInterceptEnabled = function() {
+        return this.responseInterceptEnabled[this.type] ?? false;
+    };
+    // Удаление элементов, добавленных с прошлого захода
     this.removePrevTimeFields = function() {
         var headresult = document.querySelector('.t-head-result');
         if(headresult) {headresult.remove();}
@@ -161,6 +209,7 @@ function tPriceChecker() {
         var self = this;
 
         //Корзина не новая страница, а открывается в текущей
+        /*
         var path = window.location.pathname;
         switch(this.type) {
             case TYPE_WILDBERRIES:
@@ -172,26 +221,10 @@ function tPriceChecker() {
                 }
                 break;
         }
+        */
 
         (function() {
             'use strict';
-
-            if (self.type === TYPE_OZON) {
-                GM_webRequest([
-                    { selector: '*www.ozon.ru/api/entrypoint-api.bx/page/json/v2*', action: { redirect: { from: "(.*)", to: "$1" } } }
-                ], function(info, message, details) {
-                    if (self.isLoaded) {
-                        console.log('Reinit PriceChecking');
-                        self.isLoaded = false;
-                        self.reInit();
-                    }
-                });
-
-                setTimeout(function() {
-                    window.scrollTo(0, document.body.scrollHeight);
-                    window.scrollTo(0, 0);
-                }, 100);
-            }
 
             var limitCount = 0;
             var startChecking = setInterval(function() {
@@ -204,12 +237,17 @@ function tPriceChecker() {
                 }
 
                 if (availableItems.length > 0) {
-                    console.log(availableItems.length+' items are found!');
+                    if (self.isResponseInterceptEnabled()) {
+                        console.log(availableItems.length + '|' + self.responseItems[self.type].length + ' dom|json items are found!');
+                    } else {
+                        console.log(availableItems.length + ' dom items are found!');
+                    }
+
                     clearInterval(startChecking);
                     setTimeout(function() {
                         self.initPriceChecking();
                         self.isLoaded = true;
-                    }, 500);
+                    }, self.isResponseInterceptEnabled() ? 1 : 500);
                 }
 
                 if(limitCount >= 50) {
@@ -254,6 +292,12 @@ function tPriceChecker() {
         var priceColumn = null, qtyColumn = null, imageColumn = null;
 
         switch(this.type) {
+            case TYPE_KNIGOFAN:
+                priceColumn = item.querySelector('td.basket-items-list-item-price');
+                qtyColumn = item.querySelector('td.basket-items-list-item-amount');
+
+                this.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
+                break;
             case TYPE_FFAN:
                 priceColumn = item.querySelector('td.price');
                 qtyColumn = item.querySelector('td.quantity');
@@ -308,6 +352,11 @@ function tPriceChecker() {
                 break;
             case TYPE_CHITAI_GOROD:
                 priceColumn = item.querySelector('.product-price');
+                if (!priceColumn) {
+                    priceColumn = item.querySelector('.cart-item__available');
+                    this.addCustomClassNamesToItems(item, priceColumn);
+                    return;
+                }
                 qtyColumn = item.querySelector('.cart-item__counter');
 
                 this.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
@@ -345,143 +394,76 @@ function tPriceChecker() {
         }
     };
     this.jsonItems = [];
+    this.responseItems = [];
     this.getJsonItemByCode = function(code) {
         var self = this;
-        var items = this.jsonItems.filter(item => {
-            if(self.type === TYPE_WILDBERRIES) {
-                return item.cod1S == code;
+
+        return this.responseItems[self.type].find(item => {
+            if (self.type === TYPE_KNIGOFAN) {
+                return item.id === code;
             }
+            
+            return item.product_id === code;
 
-            return null;
-        });
-
-        if(!items) {return null;}
-
-        return items[0];
+            // Заменяем позиции ozon с imageId на productId
+            //return item.imageId === code;
+        }) ?? null;
     };
     // Начинаем обработку элементов
     this.initPriceChecking = function() {
-        if(this.type === TYPE_OZON) {
-            //this.jsonItems = __NUXT__.state.shared.itemsTrackingInfo;
-            this.jsonItems = JSON.parse($('div[id^=state-split-]').data('state')).items;
-        } else if(this.type === TYPE_WILDBERRIES) {
-            var name,basketStorage;
-            var u = JSON.parse(window.localStorage._user_deliveries).u;
-            eval("name = 'wb_basket_"+u+"';");
-            eval("basketStorage = window.localStorage."+name+"");
-            this.jsonItems = JSON.parse(basketStorage).basketItems;
+        var self = this;
+        self.removePrevTimeFields();
+
+        if (!self.isResponseInterceptEnabled()) {
+            switch (this.type) {
+                case TYPE_OZON:
+                    //this.jsonItems = __NUXT__.state.shared.itemsTrackingInfo;
+                    this.jsonItems = JSON.parse($('div[id^=state-split-]').data('state')).items;
+
+                    break;
+                case TYPE_WILDBERRIES:
+                    var name, basketStorage;
+                    var u = JSON.parse(window.localStorage._user_deliveries).u;
+                    eval("name = 'wb_basket_"+u+"';");
+                    eval("basketStorage = window.localStorage."+name+"");
+                    this.jsonItems = JSON.parse(basketStorage).basketItems;
+                    break;
+            }
         }
 
-        var self = this;
-
-        // Обработка позиций в наличии
-        document.querySelectorAll(self.selectors.listItem).forEach(function(item, i) {
-            self.initOnePosition(item, i);
-        });
-
-        // Обработка позиций недоступных
-        document.querySelectorAll('.'+self.selectors.listItemNotAvailable).forEach(function(item, i) {
+        // Обработка позиций в наличии и недоступных
+        document.querySelectorAll('.'+self.selectors.listItem + ',.'+self.selectors.listItemNotAvailable).forEach(function(item, i) {
             self.initOnePosition(item, i);
         });
 
         this.appendHeadElement();
         this.appendPriceChangedInfo();
-        //this.appendNewMinPricesInfo();
         this.appendSortControls();
-        this.appendCheckPriceInfo();
+
+        this.appendCheckerElement('check-price', this.checkPriceCount);
+        this.appendCheckerElement('price-decrease', this.priceDownChanged);
+        this.appendCheckerElement('returns', this.checkReturnsCount);
+
+        this.appendQtyLimitInfo();
     };
     // Начинаем обработку одного элемента
     this.initOnePosition = function(item, i) {
-        var self = this, jsonItem, productId, currentPrice = null, title = null, qty = 1, maxQty = 0, product, isNotAvailable = false;
+        var self = this;
 
         if(item.classList.contains('t-item-checked')) {return;}
         item.classList.add('t-item-checked');
 
+        if (self.isResponseInterceptEnabled()) {
+            self.initOnePositionByResponseIntercept(item);
+            return;
+        }
+
         var itemIdProperty = item.querySelector(self.getFindingProperty());
 
+        var jsonItem, productId, currentPrice = null, title = null, qty = 1, maxQty = 0,
+          product, isNotAvailable = false;
+
         switch(self.type) {
-            case TYPE_OZON:
-                if (item.classList.contains(self.selectors.listItemNotAvailable)) {
-                    productId = item.querySelector('[alt="productImage"]').src.split('/').pop().split('.')[0];
-                    isNotAvailable = true;
-                    break;
-                }
-
-                var itemTitle = item.querySelector('span.tsBody400Small').textContent;
-
-                title = itemTitle.split('|')[0].trim();
-                productId = item.querySelector('.'+self.selectors.itemImage).querySelector('img').src.split('/').pop().split('.')[0];
-
-                if (typeof productId === 'undefined' || !productId) {
-                    productId = title.replace(/\s/g, '_').slice(0, 50).trim();
-                }
-
-                var qtyElement = item.querySelector(self.selectors.itemQuantity).querySelector('input[inputmode="numeric"]');
-
-                if (qtyElement) {
-                    maxQty = qtyElement.max;
-                    qty = qtyElement.value;
-                }
-
-                if (!item.querySelector(self.selectors.itemPrice).children[0]) {
-                    return;
-                }
-
-                var priceElement = item.querySelector(self.selectors.itemPrice).children[0].children[0].children[0];
-                if (typeof priceElement === 'undefined') {
-                    priceElement = item.querySelector(self.selectors.itemPrice).children[0].children[0];
-                }
-
-                priceElement.style.color = '#242424';
-                priceElement.style.backgroundColor = '';
-
-                if (typeof priceElement === 'undefined') {
-                    return;
-                }
-
-                // Цена с картой
-                currentPrice = self.formatPrice(priceElement.textContent);
-                if (qty > 1) {
-                    currentPrice = currentPrice / qty;
-                }
-
-                if (maxQty === 0) {
-                    console.log('remove', item);
-                    item.closest('.t-list-item').classList.remove('t-list-item')
-                    item.classList.add('t-no-stock');
-                    return;
-                }
-                break;
-            case TYPE_WILDBERRIES:
-                if (item.classList.contains(self.selectors.listItemNotAvailable)) {
-                    isNotAvailable = true;
-                    productId = item.querySelector('.list-item__good-img').getAttribute('href').split('/')[2];
-                    break;
-                } else {
-                    productId = itemIdProperty.getAttribute('data-nm');
-                }
-
-                //stocks
-                jsonItem = self.getJsonItemByCode(productId);
-                if(!jsonItem) {return;}
-                jsonItem.stocks.forEach(function(stock) {
-                    maxQty += stock.qty;
-                });
-
-                title = jsonItem.goodsName;
-                qty = jsonItem.quantity;
-                break;
-            case TYPE_CHITAI_GOROD:
-                productId = itemIdProperty.getAttribute('href').replace("/product/", "");
-                title = item.querySelector(self.selectors.title).innerHTML.trim();
-
-                if (item.querySelector('.product-quantity__counter')) {
-                    maxQty = item.querySelector('.product-quantity__counter').getAttribute('max');
-                }
-                if(item.querySelector('.product-quantity__counter')) {
-                    qty = item.querySelector('.product-quantity__counter').value;
-                }
-                break;
             case TYPE_FFAN:
                 productId = itemIdProperty.getAttribute('href').replace("/catalog/fiction/", "");
                 productId = productId.replace("/", '');
@@ -499,57 +481,172 @@ function tPriceChecker() {
         }
 
         if (currentPrice) {
-            product = self.tProductRepository.initProduct(productId, currentPrice, title);
-            self.appendOldMinPrice(product, item);
-            self.appendMaxQty(item, maxQty);
+            self.afterSuccessInitOneProduct(productId, item, currentPrice, title, maxQty);
         } else if (isNotAvailable) {
             product = self.tProductRepository.getProductById(productId);
             self.appendOldMinPrice(product, item);
         }
     };
-    // сейчас только на озон работает
-    this.getJsonPrice = function(priceColumn) {
-        var price = null;
-        priceColumn.forEach(function(data) {
-            if (data.type === 'price') {
-                price = data.price.price;
-            }
-        });
+    // Начинаем обработку одного элемента через responseIntercept
+    this.initOnePositionByResponseIntercept = function(item) {
+        var self = this, responseProductId = null, jsonItem = null, productId, currentPrice = null, title = null, qty = 1, itemStockQty = 0,
+          isNotAvailable = false;
 
-        return price;
-    };
-    // сейчас только на озон работает
-    this.getJsonTitle = function(titleColumn) {
-        var title = null;
-
-        var titles = titleColumn.filter(data => {
-            return data.type === 'text';
-        });
-
-        if(titles.length) {
-            title = titles[0].text.text;
-            title = title.split('|')[0];
+        if (self.type !== TYPE_KNIGOFAN) {
+            var itemIdProperty = item.querySelector(self.getFindingProperty());
         }
 
-        return title;
+        switch (self.type) {
+            case TYPE_KNIGOFAN:
+                responseProductId = item.getAttribute('data-id');
+                break;
+            case TYPE_CHITAI_GOROD:
+                responseProductId = itemIdProperty.getAttribute('href').split('/').pop().split('-').pop();
+                break;
+            case TYPE_WILDBERRIES:
+                if (itemIdProperty) {
+                    responseProductId = itemIdProperty.getAttribute('data-nm');
+                } else {
+                    responseProductId = item.querySelector('.good-info__title').getAttribute('href').split('/')[2];
+                    isNotAvailable = true;
+                }
+                break;
+            case TYPE_OZON:
+                // поиск по imageId
+                /*
+                if (item.querySelector('.'+self.selectors.itemImage)) {
+                    responseProductId = formatNumber(item.querySelector('.'+self.selectors.itemImage).querySelector('img').src.split('/').pop().split('.')[0]);
+                } else {
+                    responseProductId = formatNumber(item.querySelector('img[alt=productImage]').src.split('/').pop().split('.')[0]);
+                }
+                */
+
+                responseProductId = formatNumber(item.__vue__.$options.propsData.item.id);
+                break;
+            default:
+                return;
+        }
+
+        if (!responseProductId) {
+            console.log('Not found jsonItem responseProductId ', item);
+            return;
+        }
+
+        jsonItem = self.getJsonItemByCode(formatNumber(responseProductId));
+
+        if (!jsonItem) {
+            console.log('Not found jsonItem for ' + responseProductId, item);
+            return;
+        }
+
+        self.tEventListener.afterFoundJsonItemByCode(item, jsonItem);
+
+        // Заменяем позиции ozon с imageId на productId
+        /*
+        var pr = self.tProductRepository.getProductBySavingId(self.type+'-'+jsonItem.imageId);
+        if (pr) {
+            pr.id = jsonItem.id;
+            GM_setValue(self.type+'-'+jsonItem.id, JSON.stringify(pr));
+            GM.deleteValue(self.type+'-'+jsonItem.imageId);
+        }
+        return;
+        */
+
+        productId = jsonItem.product_id;
+        currentPrice = jsonItem.price;
+        qty = jsonItem.qty;
+        itemStockQty = jsonItem.itemStockQty;
+        title = jsonItem.title;
+
+        if (qty > 1) {
+            // Цена всегда приходит на 1 позицию.
+            // currentPrice = currentPrice / qty;
+        }
+
+        if (!currentPrice || !itemStockQty) {
+            isNotAvailable = true;
+        }
+
+        if (currentPrice) {
+            self.afterSuccessInitOneProduct(productId, item, currentPrice, title, itemStockQty);
+        } else if (isNotAvailable) {
+            self.afterNotAvailableInitOneProduct(productId, item);
+        }
     };
-    // append elements
+    this.afterSuccessInitOneProduct = function(productId, item, currentPrice, title, itemStockQty) {
+        var self = this;
+
+        var product = self.tProductRepository.initProduct(productId, currentPrice, title, itemStockQty);
+        self.appendOldMinPrice(product, item);
+        self.appendMaxQty(product, item, itemStockQty);
+
+        self.tEventListener.afterSuccessInitProduct(product, item, self);
+
+        var className = '';
+
+        self.productsCount++;
+        if (itemStockQty < 5) {
+            className = 't-limit-count-5';
+            self.qtyLimit[5]++;
+        } else if (itemStockQty < 10) {
+            className = 't-limit-count-10';
+            self.qtyLimit[10]++;
+        } else if (itemStockQty < 20) {
+            className = 't-limit-count-20';
+            self.qtyLimit[20]++;
+        } else if (itemStockQty < 50) {
+            className = 't-limit-count-50';
+            self.qtyLimit[50]++;
+        }
+
+        if (className) {
+            item.classList.add(className)
+        }
+    }
+    this.afterNotAvailableInitOneProduct = function (productId, item) {
+        var self = this;
+        var product = self.tProductRepository.getProductById(productId);
+        if (product && (typeof product.available === 'undefined' || product.available === true)) {
+            self.tProductRepository.saveAvailableStatus(productId, false);
+        }
+
+        if (!product) {
+            console.log('Not found product for afterNotAvailableInitOneProduct', productId, item);
+            return;
+        }
+
+        self.appendOldMinPrice(product, item);
+        self.appendNotAvailableMaxQty(product, item);
+    }
+    // Добавляем html элемент цены
     this.appendOldMinPrice = function(product, itemElement) {
+        if (!product) {
+            console.log('Not found product for appendOldMinPrice', itemElement);
+            return;
+        }
         var priceEl = itemElement.querySelector('.'+this.selectors.itemPrice);
         if(!priceEl) {return;}
         priceEl.classList.add('t-position-relative');
-        priceEl.appendChild(this.getPriceElement(product));
+        priceEl.appendChild(this.getPriceElement(product, itemElement));
     };
-    this.appendMaxQty = function(itemElement, maxQty = null) {
+    this.appendMaxQty = function(product, itemElement, maxQty = null) {
         if(!maxQty) {
             return;
         }
 
         var qtyEl = itemElement.querySelector('.'+this.selectors.itemQuantity);
-        qtyEl.appendChild(this.tHtml.getQtyElement(maxQty));
+        qtyEl.appendChild(this.tHtml.getQtyElement(maxQty, product));
     };
+    this.appendNotAvailableMaxQty = function(product, item) {
+        if(!isExists(product.maxQty)) {
+            return;
+        }
+
+        item.querySelector('.' + this.selectors.itemPrice).appendChild(this.tHtml.getQtyElement(0, product));
+    }
     this.appendHeadElement = function() {
         if (!this.addBasketHead) {return;}
+        var self = this;
 
         var toRemove = document.querySelector('.t-head-result');
         if(toRemove) {
@@ -570,6 +667,39 @@ function tPriceChecker() {
         divSort.className = 't-head-sort';
         div.appendChild(divSort);
 
+        var divSearch = document.createElement('div');
+        divSearch.className = 't-head-search';
+        var inputSearch = document.createElement('input');
+        inputSearch.type = 'text';
+        inputSearch.placeholder = 'Поиск товара';
+        inputSearch.className = 'search-input';
+        inputSearch.id = 'search-input';
+        divSearch.appendChild(inputSearch);
+        var inputSearcReset = document.createElement('input');
+        inputSearcReset.type = 'button';
+        inputSearcReset.className = 'search-reset';
+        inputSearcReset.value = '✖';
+        divSearch.appendChild(inputSearcReset);
+        div.appendChild(divSearch);
+        inputSearch.addEventListener("keyup", function (event) {
+            if (event.isComposing || event.keyCode === 229) {
+                return;
+            }
+
+            // escape
+            if (event.keyCode === 27 && event.target.value) {
+                event.target.value = '';
+                self.searchProductsByTitle('up');
+                return;
+            }
+
+            self.searchProductsByTitle(event.target.value);
+        });
+        inputSearcReset.addEventListener("click", function (event, a, b) {
+            self.searchProductsByTitle('up');
+            document.querySelector('#search-input').value = '';
+        });
+
         document.querySelector('.'+this.selectors.basketHead).position = 'relative';
         document.querySelector('.'+this.selectors.basketHead).appendChild(div);
     };
@@ -584,13 +714,22 @@ function tPriceChecker() {
             document.querySelector('.'+this.selectors.headInfo).setAttribute('data-price-down', this.priceDownChanged);
         }
     };
-    // блок когда цена стала ниже выставленной
-    this.appendCheckPriceInfo = function () {
-        if(this.checkPriceCount <= 0) {
+    // Добавляем элемент checkbox по типу
+    this.appendCheckerElement = function (type, count) {
+        if (count <= 0) {
             return;
         }
 
-        document.querySelector('.'+this.selectors.headInfo).appendChild(this.tHtml.getCheckPriceInfo(this.checkPriceCount));
+        var self = this;
+
+        document.querySelector('.t-head-result').appendChild(this.tHtml.getCheckerElement(type, count));
+        document.querySelector('#' + this.tHtml.getCheckerElementId(type)).addEventListener('change', function (event) {
+            self.showProductsByDomProperty('data-product-' + type, event);
+        });
+    }
+    // Добавляем блок показа оставшегося лимита по кол-ву
+    this.appendQtyLimitInfo = function() {
+        document.querySelector('.t-head-result').appendChild(this.tHtml.getQtyLimitInfo(this.productsCount, this.qtyLimit));
     };
     // сортировка
     this.appendSortControls = function() {
@@ -610,12 +749,69 @@ function tPriceChecker() {
             self.sort(event.target, 'price');
         });
 
+        var buttonSortTitlePrce = this.tHtml.getButtonSortTitlePrice();
+        buttonSortTitlePrce.addEventListener("click", function (event) {
+            event.preventDefault();
+            self.sort(event.target, 'title_price');
+        });
+
         document.querySelector('.t-head-sort').appendChild(buttonSortQty);
         document.querySelector('.t-head-sort').appendChild(buttonSortPrce);
+        document.querySelector('.t-head-sort').appendChild(buttonSortTitlePrce);
 
         //self.sort(buttonSortQty, 'qty');
     };
+    // Поиск в корзине по названию.
+    this.searchProductsByTitle = function (value) {
+        if (typeof value === 'undefined') {return;}
+        var self = this, items;
+
+        if (value.length < 3) {
+            items = document.querySelectorAll('.'+self.selectors.listItem+'[style="display: none;"],.'+self.selectors.listItemNotAvailable+'[style="display: none;"]');
+            items.forEach(function(item) {
+                item.style.display = 'block';
+            });
+            return;
+        }
+        value = formatProductTitle(value).toLowerCase();
+        //var searchTimeout = null;
+        items = document.querySelectorAll('.'+self.selectors.listItem+ ',.'+self.selectors.listItemNotAvailable);
+        window.scrollTo(0, 0);
+
+        items.forEach(function(item) {
+            if (!isEmpty(item.getAttribute('data-product-title')) && item.getAttribute('data-product-title').toLowerCase().includes(value)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    };
+    // Показать/скрыть позиции по свойству
+    this.showProductsByDomProperty = function (property, event) {
+        var self = this;
+
+        window.scrollTo(0, 0);
+
+        if (!event.target.checked) {
+            var items = document.querySelectorAll('.'+self.selectors.listItem+'[style="display: none;"]');
+            items.forEach(function(item) {
+                item.style.display = 'block';
+            });
+            return;
+        }
+
+        items = document.querySelectorAll('.'+self.selectors.listItem);
+        items.forEach(function(item) {
+            if (item.getAttribute(property)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
     this.sort = function(button, sortType) {
+        window.scrollTo(0, 0);
+
         var self = this;
         // сброc другим кнопкам up, down
         document.querySelectorAll('.t-sort-button').forEach(function(button) {
@@ -624,7 +820,7 @@ function tPriceChecker() {
         });
 
         var items = $('.'+this.selectors.listItem);
-        //var items = document.querySelectorAll(this.selectors.listItem);
+        //var items = document.querySelectorAll('.'+this.selectors.listItem);
 
         var direction = (button.getAttribute('data-sort') === SORT_UP) ? SORT_UP : SORT_DOWN;
         if (direction === SORT_UP) {
@@ -637,23 +833,51 @@ function tPriceChecker() {
             button.classList.add(SORT_UP);
         }
 
-        items.sort(function(a,b){
-            var an,bn;
+        items.sort(function(a,b) {
+            var an, bn, cn, dn, twoFieldsSort = false;
             switch(sortType) {
                 case 'qty':
-                    an = a.querySelector('.'+self.selectors.itemQty).getAttribute('data-qty')*1;
-                    bn = b.querySelector('.'+self.selectors.itemQty).getAttribute('data-qty')*1;
+                    if (self.isResponseInterceptEnabled()) {
+                        an = a.getAttribute('data-product-qty');
+                        bn = b.getAttribute('data-product-qty');
+                    } else {
+                        an = a.querySelector('.'+self.selectors.itemQty).getAttribute('data-qty');
+                        bn = b.querySelector('.'+self.selectors.itemQty).getAttribute('data-qty');
+                    }
                     break;
                 case 'price':
-                    an = a.querySelector('.t-price-arrow').getAttribute('data-price')*1;
-                    bn = b.querySelector('.t-price-arrow').getAttribute('data-price')*1;
+                    if (self.isResponseInterceptEnabled()) {
+                        an = a.getAttribute('data-product-price');
+                        bn = b.getAttribute('data-product-price');
+                    } else {
+                        an = a.querySelector('.t-price-arrow').getAttribute('data-price');
+                        bn = b.querySelector('.t-price-arrow').getAttribute('data-price');
+                    }
+                    break;
+                case 'title_price':
+                    twoFieldsSort = true;
+
+                    an = a.getAttribute('data-product-price');
+                    bn = b.getAttribute('data-product-price');
+
+                    cn = a.getAttribute('data-product-title');
+                    dn = b.getAttribute('data-product-title');
+
                     break;
             }
 
-            if(direction === SORT_UP) {
-                return bn - an;
+            if (twoFieldsSort) {
+                if(cn === dn) {
+                    return (an < bn) ? -1 : (an > bn) ? 1 : 0;
+                } else {
+                    return (an < bn) ? -1 : 1;
+                }
             } else {
-                return an - bn;
+                if(direction === SORT_UP) {
+                    return bn*1 - an*1;
+                } else {
+                    return an*1 - bn*1;
+                }
             }
         }).each(function(i) {
             this.parentNode.appendChild(this);
@@ -664,20 +888,28 @@ function tPriceChecker() {
         //items.parent().appendChild(newItems);
     };
     //get html elements
-    this.getPriceElement = function(product) {
+    this.getPriceElement = function(product, itemElement) {
         var self = this;
         var oldMinPrice = product.oldCurrentPrice;
         var currentPrice = product.price;
         var checkPrice = product.checkPrice ?? null;
 
-        var colorClassName = 'not-changed', newMinPrice = '';
+        var colorClassName = 'not-changed';
         if (currentPrice > oldMinPrice) {
-            colorClassName = 'up';
-            this.priceUpChanged++;
+            //colorClassName = 'up';
+            this.tEventListener.whenFoundPriceUp(product, itemElement, self);
         } else if(currentPrice < oldMinPrice) {
+            //colorClassName = 'down';
+            this.tEventListener.whenFoundPriceDown(product, itemElement, self);
+        } else {
+            this.tEventListener.whenPriceIsNotChanged(product, itemElement, self);
+        }
+
+        if (product.isPriceDown === true) {
             colorClassName = 'down';
-            this.priceDownChanged++;
-            this.newMinPrices++;
+            oldMinPrice = product.oldCurrentPrice;
+        } else if(product.isPriceUp === true) {
+            colorClassName = 'up';
         } else {
             oldMinPrice = '';
         }
@@ -687,6 +919,13 @@ function tPriceChecker() {
 
         var div = document.createElement("div");
         div.className = self.selectors.oldPrice;
+
+        if (product.available === false && typeof product.not_available_date_from === 'string') {
+            var divNotAvailableInfo = document.createElement("span");
+            divNotAvailableInfo.className = 'unavailable-info';
+            divNotAvailableInfo.textContent = 'Недоступно с ' + formatDate(new Date(product.not_available_date_from), true);
+            div.append(divNotAvailableInfo);
+        }
 
         var oldPricePercentDiv = document.createElement("div");
         oldPricePercentDiv.className = self.selectors.oldPricePercent;
@@ -729,10 +968,12 @@ function tPriceChecker() {
         oldPricePercentDiv.append(spanEdit);
 
         var tCheckPriceClassNames = 't-check-price t-button';
-        if (checkPrice && checkPrice >= currentPrice) {
+        if (checkPrice && checkPrice >= currentPrice && product.available === true) {
             tCheckPriceClassNames += ' t-check-price-available';
             this.checkPriceCount++;
+            self.tEventListener.whenFoundPriceCheck(product, itemElement);
         }
+
         var spanCheckPrice = document.createElement("button");
         spanCheckPrice.className = tCheckPriceClassNames;
         spanCheckPrice.setAttribute('title', 'Set Check Price');
@@ -742,6 +983,19 @@ function tPriceChecker() {
         });
         oldPricePercentDiv.append(spanCheckPrice);
 
+        var removeButton = self.tHtml.createElement('button', {
+            title: 'Remove from storage',
+            class: 'remove-from-storage-button t-button'
+        });
+        removeButton.addEventListener('click', function(event) {
+            event.preventDefault();
+
+            var element = self.tProduct.isAvailable(product) ? event.target.closest('.' + self.selectors.listItem) : event.target.closest('.' + self.selectors.listItemNotAvailable);
+
+            self.tEventListener.whenRemoveFromStorage(element);
+        });
+        oldPricePercentDiv.append(removeButton);
+
         div.append(oldPricePercentDiv);
 
         this.appendHoverElements(div, product.id);
@@ -749,11 +1003,21 @@ function tPriceChecker() {
         return div;
     };
     this.appendHoverElements = function(parentEl, productId) {
+        var self = this;
+
         var hoverField = document.createElement("div");
         hoverField.className = 't-hover-field';
 
         this.appendPriceDates(hoverField, productId, parentEl);
-        this.appendSameProducts(hoverField, productId, parentEl);
+
+        if (self.type !== TYPE_KNIGOFAN) {
+            parentEl.addEventListener('mouseover', function(event) {
+                if (parentEl.querySelector('.t-price-same-products-icon')) {return;}
+
+                var tOldPriceField = event.target.classList.contains('t-old-price') ? event.target: event.target.closest('.t-old-price');
+                self.appendSameProducts(tOldPriceField.querySelector('.t-hover-field'), productId, parentEl);
+            });
+        }
 
         parentEl.append(hoverField);
     };
