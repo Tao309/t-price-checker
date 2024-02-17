@@ -123,7 +123,7 @@ function tPriceChecker() {
         this.tEventListener = new tEventListener(this.type);
         this.tEventListener.init();
 
-        this.tProduct = new tProduct();
+        this.tProduct = new tProductModel();
 
         if (this.isResponseInterceptEnabled()) {
             console.log('!!!!!!! ResponseInterceptEnabled !!!!!!!');

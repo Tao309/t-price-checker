@@ -5,7 +5,7 @@ function tEventListener(type) {
 
     this.init = function () {
         this.tProductRepository = new tProductRepository(this.type);
-        this.tProduct = new tProduct();
+        this.tProduct = new tProductModel();
     }
 
     // После успешной обработки позиции для списка
