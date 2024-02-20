@@ -5,29 +5,26 @@ function tEventListener(type) {
 
     this.init = function () {
         this.tProductRepository = new tProductRepository(this.type);
-        this.tProduct = new tProductModel();
     }
 
     // После успешной обработки позиции для списка
-    this.afterSuccessInitProduct = function (product, item, tPriceChecker) {
-        var self = this;
+    this.afterSuccessInitProduct = function (productModel, item, tPriceChecker) {
+        if (productModel.isAvailable()) {
+            if (!productModel.getAvailableDateFrom()) {
+                return;
+            }
 
-        if (product.available === false) {
-            self.tProductRepository.saveAvailableStatus(product.id, true);
+            var nowDate = new Date();
+            nowDate.setDate(nowDate.getDate() - 1);
+
+            if (nowDate.getTime() < productModel.getAvailableDateFrom().getTime()) {
+                item.setAttribute('data-product-returns', 1);
+                tPriceChecker.checkReturnsCount++;
+            }
+        } else {
+            productModel.enableAvailable();
             item.setAttribute('data-product-returns', 1);
             tPriceChecker.checkReturnsCount++;
-        } else if (product.available === true) {
-            if (typeof product.available_date_from === 'string') {
-                var dateFrom = new Date(product.available_date_from);
-
-                var nowDate = new Date();
-                nowDate.setDate(nowDate.getDate() - 1);
-
-                if (nowDate.getTime() < dateFrom.getTime()) {
-                    item.setAttribute('data-product-returns', 1);
-                    tPriceChecker.checkReturnsCount++;
-                }
-            }
         }
     }
 
@@ -40,34 +37,30 @@ function tEventListener(type) {
     }
 
     // Когда найдено, что цена повысилась
-    this.whenFoundPriceUp = function (product, item, tPriceChecker) {
+    this.whenFoundPriceUp = function (productModel, item, tPriceChecker) {
         tPriceChecker.priceUpChanged++;
-        product.isPriceUp = true;
+        productModel.setFlag(tProduct.FLAG_IS_PRICE_UP, true);
     }
 
     // Когда найдено, что цена понизилась
-    this.whenFoundPriceDown = function (product, item, tPriceChecker) {
-        if (product.available === false) {return;}
+    this.whenFoundPriceDown = function (productModel, item, tPriceChecker) {
+        if (!productModel.isAvailable()) {return;}
         tPriceChecker.priceDownChanged++;
         item.setAttribute('data-product-price-decrease', 1);
-        product.isPriceDown = true;
+        productModel.setFlag(tProduct.FLAG_IS_PRICE_DOWN, true);
     }
 
     // Когда цена не изменилась сейчас
-    this.whenPriceIsNotChanged = function (product, item, tPriceChecker) {
-        var splitLastDate = product.lastDate.split('.');
-        var lastDate = new Date(splitLastDate[2]+'-'+splitLastDate[1]+'-'+splitLastDate[0]+' 00:00:00+0000');
+    this.whenPriceIsNotChanged = function (productModel, item, tPriceChecker) {
+        var lastDate = productModel.getLastDate();
         var currentDate = new Date();
-        currentDate.setHours(-21);
-        currentDate.setMinutes(0);
-        currentDate.setSeconds(0);
 
-        if (currentDate.getTime() < lastDate.getTime() && product.dates.length > 1 && (this.tProduct.isAvailable(product))) {
+        if (currentDate.getTime() < lastDate.getTime() && productModel.isAvailable()) {
             tPriceChecker.priceDownChanged++;
             item.setAttribute('data-product-price-decrease', 1);
-            product.isPriceDown = true;
+            productModel.setFlag(tProduct.FLAG_IS_PRICE_DOWN, true);
 
-            product.oldCurrentPrice = product.dates[product.dates.length - 2].price;
+            // productModel.oldCurrentPrice = product.dates[product.dates.length - 2].price;
         }
     }
 
@@ -84,7 +77,7 @@ function tEventListener(type) {
             return;
         }
 
-        if (!this.tProductRepository.removeById(productId)) {return;}
+        if (!tProductLocal.removeById(this.type + '-' +productId)) {return;}
 
         if (!parentEl) {
             console.log('Parent element for product {'+productId+'} is not found');

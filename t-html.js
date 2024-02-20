@@ -1,5 +1,8 @@
-function tHtml(type) {
+function tHtml(type, tPriceChecker) {
     this.type = type;
+    this.tEventListener = new tEventListener(type);
+    this.tPriceChecker = tPriceChecker;
+    this.tProductRepository = new tProductRepository(type);
     this.checkerElements = {
         'check-price': {label: 'отслеживаемые'},
         'price-decrease': {label: 'понижение'},
@@ -32,12 +35,11 @@ function tHtml(type) {
         if (isExists(data.title)) {el.title = data.title;}
 
         return el;
-    }
+    };
+    this.getShopLinkForProduct = function(productModel) {
+        var productId = productModel.getProductId();
 
-    this.getShopLinkForProduct = function(product) {
-        var productId = product.id;
-
-        switch(product.type) {
+        switch(productModel.getType()) {
             case TYPE_KNIGOFAN:
                 return 'https://knigofan.ru/catalog/horus-heresy/primarkhi/929/';
             case TYPE_WILDBERRIES:
@@ -50,35 +52,69 @@ function tHtml(type) {
                 return 'https://www.chitai-gorod.ru/product/'+productId;
         }
     };
-    this.getQtyElement = function(qty, product) {
-        var div = this.createElement('div', {
-            className: 't-item-qty'
+    this.getQtyElement = function(productModel) {
+        var self = this;
+        var currentQty = productModel.getCurrentQty();
+
+        var itemQtyDiv = this.createElement('div', {
+            className: this.tPriceChecker.selectors.itemQty
         });
-        div.setAttribute('data-qty', qty);
 
-        var span = this.createElement('div');
-        var textContent = qty;
-        if (!isEmpty(product.maxQty)) {
-            textContent += ' / ' + product.maxQty;
+        itemQtyDiv.setAttribute('data-qty', currentQty);
+
+        var currentQtyDiv = this.createElement('div', {
+            className: 't-item-current-qty'
+        });
+
+        var textContent;
+        if (!currentQty) {
+            if (productModel.getLastQty()) {
+                textContent = 'Было: ' + productModel.getLastQty();
+            }
+        } else {
+            textContent = currentQty;
+            textContent += ' / ' + productModel.getLastQty();
         }
 
-        if (qty === 0 && !isEmpty(product.maxQty)) {
-            textContent = 'Было: ' + product.maxQty;
-        }
+        currentQtyDiv.textContent = textContent;
 
-        span.textContent = textContent
+        itemQtyDiv.append(currentQtyDiv);
 
-        div.append(span);
-
-        if (!isEmpty(product.maxQtyDate)) {
-            var spanDate = this.createElement('div', {
-                textContent: formatDate(new Date(product.maxQtyDate), true),
+        if (productModel.getLastQtyDate()) {
+            var dateDiv = this.createElement('div', {
+                textContent: 'Доступно с ' + tProduct.convertDateToString(productModel.getLastQtyDate()),
                 className: 't-item-max-qty-date'
             });
-            div.append(spanDate);
+
+            itemQtyDiv.append(dateDiv);
         }
 
-        return div;
+        var stocks = productModel.getStocks();
+        if (stocks.length > 0) {
+            var stockDiv = this.createElement('div', {
+                className: 't-item-stocks'
+            });
+
+            var stockDivRow = self.createElement('div', {
+                textContent: 'Всего: ' + productModel.getStockQty(),
+                className: 't-item-stock-qty-row'
+            });
+
+            stockDiv.append(stockDivRow);
+
+            stocks.forEach(function (stock) {
+                stockDivRow = self.createElement('div', {
+                    textContent: tProduct.convertDateToString(stock.date) + ': ' + stock.qty,
+                    className: 't-item-stock-row'
+                });
+
+                stockDiv.append(stockDivRow);
+            });
+
+            itemQtyDiv.append(stockDiv);
+        }
+
+        return itemQtyDiv;
     };
     /*
     this.getNewMinPricesInfo = function(count) {
@@ -180,12 +216,12 @@ function tHtml(type) {
         productDiv.className = 't-same-product';
 
         var link = document.createElement("a");
-        link.textContent = foundProduct.type+': '+foundProduct.price;
+        link.textContent = foundProduct.getType() + ': ' + foundProduct.getCurrentPrice();
         link.href = this.getShopLinkForProduct(foundProduct);
         link.setAttribute('target','_blank');
-        if(product.price > foundProduct.price) {
+        if(product.getCurrentPrice() > foundProduct.getCurrentPrice()) {
             link.className = 'down';
-        } else if(product.price < foundProduct.price) {
+        } else if(product.getCurrentPrice() < foundProduct.getCurrentPrice()) {
             link.className = 'up';
         }
 
@@ -243,18 +279,20 @@ function tHtml(type) {
         editSumbitButton.type = 'submit';
         editSumbitButton.textContent = 'Save';
 
+        var productModel = tProductLocal.get(this.type + '-' + productId);
+
         editForm.addEventListener('submit', function(event) {
             event.preventDefault();
 
-            var title = event.target.querySelector('input[type=text]').value;
-            tPriceChecker.tProductRepository.saveTitle(productId, title);
+            productModel.setTitle(event.target.querySelector('input[type=text]').value);
+            productModel.save();
+
             self.closeEditWindow();
         })
 
-        var product = tPriceChecker.tProductRepository.getProductById(productId);
-        if (product) {
-            editInput.value = product.title;
-            productInfo.textContent = tPriceChecker.tProductRepository.getSavingProductId(productId);
+        if (productModel) {
+            editInput.value = productModel.getTitle();
+            productInfo.textContent = this.type + '-' + productId;
         }
 
         editForm.append(editInput);
@@ -286,48 +324,227 @@ function tHtml(type) {
         editSumbitButton.type = 'submit';
         editSumbitButton.textContent = 'Save';
 
+        var productModel = tProductLocal.get(this.type + '-' + productId);
+
         editForm.addEventListener('submit', function(event) {
             event.preventDefault();
 
-            var title = event.target.querySelector('input[type=text]').value;
-            tPriceChecker.tProductRepository.saveCheckPrice(productId, title);
+            productModel.setListenPriceValue(event.target.querySelector('input[type=text]').value);
+            productModel.save();
+
             self.closeEditWindow();
         });
 
-        editInput.addEventListener('keyup', function(event) {
+        editInput.addEventListener('keyup', function() {
             this.value = this.value.replace(/[^0-9\.]/g, '');
         });
 
-        var product = tPriceChecker.tProductRepository.getProductById(productId);
-        var checkPrice = product.checkPrice;
-
-        if (checkPrice > 0) {
+        if (productModel.getListenPriceValue() > 0) {
             var resetButton = document.createElement("button");
             resetButton.className = 't-button t-button-reset';
             resetButton.textContent = 'Reset CheckPrice';
 
             resetButton.addEventListener('click', function(event) {
                 event.preventDefault();
-                tPriceChecker.tProductRepository.resetCheckPrice(productId);
+
+                productModel.setListenPriceValue(null);
+                productModel.save();
+
                 buttonElement.classList.remove('t-check-price-available');
                 self.closeEditWindow();
             });
         }
 
-        if (product) {
-            editInput.value = product.checkPrice ?? '';
-            productInfo.textContent = 'Set CheckPrice for: ' + tPriceChecker.tProductRepository.getSavingProductId(productId);
+        if (productModel) {
+            editInput.value = productModel.getListenPriceValue() ?? '';
+            productInfo.textContent = 'Set CheckPrice for: ' + this.type + '-' + productId;
         }
 
         editForm.append(editInput);
         editForm.append(editSumbitButton);
         editBody.append(productInfo);
         editBody.append(editForm);
-        if (checkPrice > 0) {
+        if (productModel.getListenPriceValue() > 0) {
             editBody.append(resetButton);
         }
         editWindow.append(editBody);
 
         return editWindow;
+    };
+    this.getPriceElement = function(productModel, itemElement) {
+        var self = this;
+        var oldMinPrice = productModel.getLastPrice();
+        var currentPrice = productModel.getCurrentPrice();
+        var checkPrice = productModel.getListenPriceValue();
+
+        var colorClassName = 'not-changed';
+        if (currentPrice > oldMinPrice) {
+            //colorClassName = 'up';
+            this.tEventListener.whenFoundPriceUp(productModel, itemElement, this.tPriceChecker);
+        } else if(currentPrice < oldMinPrice) {
+            //colorClassName = 'down';
+            this.tEventListener.whenFoundPriceDown(productModel, itemElement, this.tPriceChecker);
+        } else {
+            this.tEventListener.whenPriceIsNotChanged(productModel, itemElement, this.tPriceChecker);
+        }
+
+        if (productModel.getFlag(tProduct.FLAG_IS_PRICE_DOWN)) {
+            colorClassName = 'down';
+        } else if(productModel.getFlag(tProduct.FLAG_IS_PRICE_UP)) {
+            colorClassName = 'up';
+        } else {
+            oldMinPrice = '';
+        }
+
+        // сравнение с предыдущей ценой из истории
+        var oldPriceForElement = oldMinPrice;
+
+        var div = document.createElement("div");
+        div.className = this.tPriceChecker.selectors.oldPrice;
+
+        if (!productModel.isAvailable() && productModel.getNotAvailableDateFrom()) {
+            var divNotAvailableInfo = document.createElement("span");
+            divNotAvailableInfo.className = 'unavailable-info';
+            divNotAvailableInfo.textContent = 'Недоступно с ' + tProduct.convertDateToString(productModel.getNotAvailableDateFrom());
+            div.append(divNotAvailableInfo);
+        }
+
+        var oldPricePercentDiv = document.createElement("div");
+        oldPricePercentDiv.className = this.tPriceChecker.selectors.oldPricePercent;
+
+        var span = document.createElement("span");
+        span.className = 't-price-arrow '+colorClassName;
+        span.textContent = oldPriceForElement;
+        span.setAttribute('data-price', currentPrice);
+        oldPricePercentDiv.append(span);
+
+        var percentText;
+        if (oldPriceForElement > 0 && oldPriceForElement != currentPrice) {
+            var abs = Math.abs(oldPriceForElement - currentPrice);
+            var sign = (oldPriceForElement > currentPrice) ? '-' : '+';
+            percentText = sign + (Math.round((abs/currentPrice)*100)) + '%';
+        }
+
+        if (percentText) {
+            var spanPercent = document.createElement("span");
+            spanPercent.className = 't-price-percent';
+            spanPercent.textContent = percentText;
+            oldPricePercentDiv.append(spanPercent);
+        }
+
+        if (productModel.getLastDate()) {
+            var spanDate = document.createElement("span");
+            spanDate.className = 't-price-old-date';
+            spanDate.textContent = tProduct.convertDateToString(productModel.getLastDate());
+            div.append(spanDate);
+        }
+
+        var spanEdit = document.createElement("button");
+        spanEdit.className = 't-title-edit t-button';
+        spanEdit.setAttribute('title', 'Edit title');
+        spanEdit.addEventListener("click", function (event) {
+            event.preventDefault();
+            self.openEditTitleWindow(event.target, productModel.getProductId());
+        });
+        oldPricePercentDiv.append(spanEdit);
+
+        var tCheckPriceClassNames = 't-check-price t-button';
+        if (checkPrice && checkPrice >= currentPrice && productModel.isAvailable()) {
+            tCheckPriceClassNames += ' t-check-price-available';
+            this.checkPriceCount++;
+            self.tEventListener.whenFoundPriceCheck(productModel, itemElement);
+        }
+
+        var spanCheckPrice = document.createElement("button");
+        spanCheckPrice.className = tCheckPriceClassNames;
+        spanCheckPrice.setAttribute('title', 'Set Check Price');
+        spanCheckPrice.addEventListener("click", function (event) {
+            event.preventDefault();
+            self.openEditCheckPriceWindow(event.target, productModel.getProductId());
+        });
+        oldPricePercentDiv.append(spanCheckPrice);
+
+        var removeButton = self.createElement('button', {
+            title: 'Remove from storage',
+            class: 'remove-from-storage-button t-button'
+        });
+        removeButton.addEventListener('click', function(event) {
+            event.preventDefault();
+
+            var element = productModel.isAvailable() ? event.target.closest('.' + self.tPriceChecker.selectors.listItem) : event.target.closest('.' + self.tPriceChecker.selectors.listItemNotAvailable);
+
+            self.tEventListener.whenRemoveFromStorage(element);
+        });
+
+        oldPricePercentDiv.append(removeButton);
+
+        div.append(oldPricePercentDiv);
+
+        if (productModel.getPriceDateCount() > 1) {
+            this.appendHoverElements(div, productModel);
+        }
+
+        return div;
+    };
+    this.appendHoverElements = function(parentEl, productModel) {
+        var self = this;
+
+        var hoverField = document.createElement("div");
+        hoverField.className = 't-hover-field';
+
+        this.appendPriceDates(hoverField, productModel, parentEl);
+
+        if (self.type !== TYPE_KNIGOFAN) {
+            parentEl.addEventListener('mouseover', function(event) {
+                if (parentEl.querySelector('.t-price-same-products-icon')) {return;}
+
+                var tOldPriceField = event.target.classList.contains('t-old-price') ? event.target: event.target.closest('.t-old-price');
+                self.appendSameProducts(tOldPriceField.querySelector('.t-hover-field'), productModel, parentEl);
+            });
+        }
+
+        parentEl.append(hoverField);
+    };
+    this.appendSameProducts = function(hoverField, productModel, parentEl) {
+        if (!productModel) {return;}
+        var foundProducts = this.tProductRepository.getProductsBySameTitle(productModel);
+        if (!foundProducts.length) {return;}
+        var el = this.getSameProducts(foundProducts, productModel);
+
+        var dateIconSpan = document.createElement("span");
+        dateIconSpan.className = 't-price-same-products-icon';
+        parentEl.append(dateIconSpan);
+
+        hoverField.append(el);
+    };
+    this.appendPriceDates = function(hoverField, productModel, parentEl) {
+        if(!productModel.getPriceDateForViewCount()) {return;}
+
+        var divDates = document.createElement("div");
+        divDates.className = 't-price-dates';
+
+        productModel.getPriceDatesForView().forEach(function(priceDate) {
+            var priceDateDiv = document.createElement("div");
+            priceDateDiv.className = 't-price-date';
+            priceDateDiv.textContent = tProduct.convertDateToString(priceDate.date) + ': ' + priceDate.price;
+
+            divDates.appendChild(priceDateDiv);
+        });
+
+        var dateIconSpan = document.createElement("span");
+        dateIconSpan.className = 't-price-dates-icon';
+        parentEl.append(dateIconSpan);
+
+        hoverField.append(divDates);
+    };
+    this.openEditTitleWindow = function(el, productId) {
+        this.closeEditWindow();
+        document.querySelector('body').append(this.getWindowShadow());
+        document.querySelector('body').append(this.getEditWindow(productId, this));
+    };
+    this.openEditCheckPriceWindow = function(el, productId) {
+        this.closeEditWindow();
+        document.querySelector('body').append(this.getWindowShadow());
+        document.querySelector('body').append(this.openCheckPriceWindow(productId, this, el));
     };
 }

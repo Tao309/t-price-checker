@@ -153,8 +153,8 @@ function tResponseInterceptor(type, tPriceChecker) {
       product_id: id,
       title: title,
       price: price,
-      qty: qty,
-      itemStockQty: itemStockQty,
+      qty: qty,// Тут сколько в корзине выбрал
+      itemStockQty: itemStockQty, // Доступное сейчас кол-во
       imageId: isExists(imageId) ? imageId : imageId,
       url: isExists(url) ? url : null
     };

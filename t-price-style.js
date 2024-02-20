@@ -95,8 +95,25 @@ function tPriceStyle(initType) {
     .t-product-not-found {font-size: 24px; color:#f97d12;}
 
     .t-position-relative {position: relative;}
-    .t-item-qty {color: #af07af; margin:8px 0 0 10px;}
-    .t-item-qty .t-item-max-qty-date {color: #707070; font-size: 0.8rem; margin-top: 2px;}
+    .t-item-qty {margin:8px 0 0 10px; width: 120px; position: relative; cursor: default;}
+    .t-item-qty .t-item-current-qty {color: #af07af; }
+    .t-item-qty .t-item-max-qty-date {color: #707070; font-size: 0.7rem; margin-top: 2px;}
+    .t-item-qty .t-item-stocks {
+        display: none; 
+        position: absolute; 
+        left: 130px; top: -8px; 
+        width: 140px; 
+        padding: 6px 8px;
+        border: 1px solid #707070;
+        background: #fff;
+        z-index: 1;
+        color: #707070;
+        font-size: 0.9rem;
+        border-radius: 2px;
+    }
+    .t-item-qty:hover .t-item-stocks {display: block;}
+    .t-item-qty .t-item-stock-row {}
+    .t-item-qty .t-item-stock-qty-row {}
 
     .t-sort-button {font-size: 16px; color: #707783; margin: 0 2px; border: 1px solid #edf3f7; border-radius: 4px; background: white; padding: 4px; line-height: normal;}
     .t-sort-button:hover {cursor: pointer; background: #828997; color: #edf3f7;}
@@ -142,9 +159,11 @@ function tPriceStyle(initType) {
         switch(this.type) {
             case TYPE_KNIGOFAN:
                 this.appendCssStyles(`<style>
+                    .t-head-result {left: 800px; position: absolute; top: -45px;}
                     .t-old-price {position: relative; top: 5px; padding-left: 0;}
                     .t-list-item > td {padding: 22px 0 14px 0!important;}
                     .t-list-item > td.basket-items-list-item-price {padding: 22px 0 14px 20px!important;}
+                    .t-changed-result.products-count p {line-height: 1.4rem;}                    
                 </style>`);
                 break;
             case TYPE_OZON:
