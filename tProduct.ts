@@ -197,23 +197,19 @@ abstract class tProduct {
         return this.getData(tProduct.PARAM_PRICE_DATES) ? this.getData(tProduct.PARAM_PRICE_DATES) : [];
     };
 
-    getPriceDatesForView(): PriceDate[] {
-        if (this.getPriceDateCount() < 2) {
-            return [];
-        }
+    getPriceDateCount(): number {
+        return this.getData(tProduct.PARAM_PRICE_DATES) ? this.getData(tProduct.PARAM_PRICE_DATES).length : 0;
+    };
 
+    getPriceDatesForView(): PriceDate[] {
         var priceDates  = this.getData(tProduct.PARAM_PRICE_DATES);
         priceDates.slice(0, -1);
 
         return priceDates;
     };
 
-    getPriceDateCount(): number {
-        return this.getData(tProduct.PARAM_PRICE_DATES) ? this.getData(tProduct.PARAM_PRICE_DATES).length : 0;
-    };
-
-    getPriceDateForViewCount(): number {
-        return this.getPriceDateCount() - 1;
+    getPriceDateForViewCount(): boolean {
+        return this.getCurrentPrice() > this.getLastPrice() || this.getPriceDateCount() > 2;
     };
 
     appendCurrentPriceAndQty(currentPrice: number, currentQty: number) {

@@ -480,9 +480,7 @@ function tHtml(type, tPriceChecker) {
 
         div.append(oldPricePercentDiv);
 
-        if (productModel.getPriceDateCount() > 1) {
-            this.appendHoverElements(div, productModel);
-        }
+        this.appendHoverElements(div, productModel);
 
         return div;
     };
@@ -505,18 +503,6 @@ function tHtml(type, tPriceChecker) {
 
         parentEl.append(hoverField);
     };
-    this.appendSameProducts = function(hoverField, productModel, parentEl) {
-        if (!productModel) {return;}
-        var foundProducts = this.tProductRepository.getProductsBySameTitle(productModel);
-        if (!foundProducts.length) {return;}
-        var el = this.getSameProducts(foundProducts, productModel);
-
-        var dateIconSpan = document.createElement("span");
-        dateIconSpan.className = 't-price-same-products-icon';
-        parentEl.append(dateIconSpan);
-
-        hoverField.append(el);
-    };
     this.appendPriceDates = function(hoverField, productModel, parentEl) {
         if(!productModel.getPriceDateForViewCount()) {return;}
 
@@ -536,6 +522,18 @@ function tHtml(type, tPriceChecker) {
         parentEl.append(dateIconSpan);
 
         hoverField.append(divDates);
+    };
+    this.appendSameProducts = function(hoverField, productModel, parentEl) {
+        if (!productModel) {return;}
+        var foundProducts = this.tProductRepository.getProductsBySameTitle(productModel);
+        if (!foundProducts.length) {return;}
+        var el = this.getSameProducts(foundProducts, productModel);
+
+        var dateIconSpan = document.createElement("span");
+        dateIconSpan.className = 't-price-same-products-icon';
+        parentEl.append(dateIconSpan);
+
+        hoverField.append(el);
     };
     this.openEditTitleWindow = function(el, productId) {
         this.closeEditWindow();
