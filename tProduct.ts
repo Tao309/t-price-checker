@@ -244,12 +244,17 @@ abstract class tProduct {
     };
 
     changeLastStockQty(qty: number) {
-        // @todo проверить как будет сетиться данные через объекты
-        let stocks = this.getData(tProduct.PARAM_STOCKS);
-        var lastKey = stocks.length ? stocks.length - 1 : 0;
+        let stocks = this.getStocks();
+        if (!stocks.length) {
+            return;
+        }
+
+        let lastStockDate = this.getLastQtyDate();
+
+        var lastKey = stocks.length - 1;
         stocks[lastKey] = {
             qty: qty,
-            date: new Date()
+            date: lastStockDate
         };
 
         this.setData(tProduct.PARAM_STOCKS, stocks);
