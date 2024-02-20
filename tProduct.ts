@@ -285,6 +285,11 @@ abstract class tProduct {
     static convertDateToString(date: Date): string {
         return date.toJSON().slice(0,10).split('-').reverse().join('.');
     };
+
+    // Получаем разницу между датами в днях
+    static getDiffDateDays(fromDate: Date, toDate: Date): number {
+        return Math.round((toDate.getTime() - fromDate.getTime()) / (1000 * 3600 * 24));
+    }
     // Tools methods END
 }
 

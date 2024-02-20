@@ -605,13 +605,13 @@ function tPriceChecker() {
         var self = this;
         var productModel = tProductLocal.get(this.type + '-' + productId);
 
-        if (productModel && productModel.isAvailable()) {
-            productModel.disableAvailable();
-        }
-
         if (!productModel) {
             console.log('Not found product for afterNotAvailableInitOneProduct', productId, item);
             return;
+        }
+
+        if (productModel.isAvailable()) {
+            productModel.disableAvailable();
         }
 
         self.appendOldMinPrice(productModel, item);

@@ -9,22 +9,11 @@ function tEventListener(type) {
 
     // После успешной обработки позиции для списка
     this.afterSuccessInitProduct = function (productModel, item, tPriceChecker) {
-        if (productModel.isAvailable()) {
-            if (!productModel.getAvailableDateFrom()) {
-                return;
-            }
-
-            var nowDate = new Date();
-            nowDate.setDate(nowDate.getDate() - 1);
-
-            if (nowDate.getTime() < productModel.getAvailableDateFrom().getTime()) {
+        if (productModel.isAvailable() && productModel.getAvailableDateFrom()) {
+            if (tProduct.getDiffDateDays(productModel.getAvailableDateFrom(), (new Date())) <= 1) {
                 item.setAttribute('data-product-returns', 1);
                 tPriceChecker.checkReturnsCount++;
             }
-        } else {
-            productModel.enableAvailable();
-            item.setAttribute('data-product-returns', 1);
-            tPriceChecker.checkReturnsCount++;
         }
     }
 

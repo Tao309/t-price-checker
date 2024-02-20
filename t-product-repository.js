@@ -5,6 +5,7 @@ function tProductRepository(type) {
         var requireToSave;
 
         if (product) {
+            requireToSave = product.isBecomeAvailable();
             product.appendCurrentPriceAndQty(currentPrice, itemStockQty);
 
             if (product.getLastPrice() > currentPrice) {
@@ -12,15 +13,15 @@ function tProductRepository(type) {
                 requireToSave = true;
             }
 
-            /**
-             * Недоступен был, но появилось кол-во со стока.
-             * Кол-во со стока стало больше ранее записанного кол-ва.
-             */
             if (
-                (!product.isAvailable() && itemStockQty > 0)
-                || itemStockQty > (product.getLastQty() + 10) // Погрешность, если старое вернулось в сток
+                // Был недоступен и стал доступен, с большим кол-вом чем в последнем стоке
+                (product.getCurrentQty() > product.getLastQty() && product.isBecomeAvailable())
+                // Разницу между стоком и сегодня 7 дней прошло
+                || (product.getCurrentQty() > product.getLastQty() && tProduct.getDiffDateDays(product.getLastQtyDate(), (new Date())) > 7)
+                // Погрешность, если старое вернулось в сток более чем на 5 позиций
+                || product.getCurrentQty() > (product.getLastQty() + 5)
             ) {
-                product.appendNewStock(itemStockQty)
+                product.appendNewStock(itemStockQty);
                 requireToSave = true;
             }
         } else {
