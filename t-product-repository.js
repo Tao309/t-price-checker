@@ -13,19 +13,19 @@ function tProductRepository(type) {
                 requireToSave = true;
             }
 
-            var diffDays = tProduct.getDiffDateDays(product.getLastQtyDate(), (new Date()));
+            var diffDays = tProduct.getDiffDateDays(product.getLastStockDate(), (new Date()));
 
             // Кол-во стало больше, но не прошло много дней, чтобы это был новый сток
-            if (product.getCurrentQty() > (product.getLastQty() + 5) && diffDays < 7) {
+            if (product.getCurrentQty() > (product.getLastStockQty() + 5) && diffDays < 7) {
                 product.changeLastStockQty(product.getCurrentQty());
                 requireToSave = true;
             } else if (
                 // Был недоступен и стал доступен, с большим кол-вом чем в последнем стоке
-                (product.getCurrentQty() > product.getLastQty() && product.isBecomeAvailable())
+                (product.getCurrentQty() > product.getLastStockQty() && product.isBecomeAvailable())
                 // Разницу между стоком и сегодня 7 дней прошло
-                || (product.getCurrentQty() > product.getLastQty() && diffDays > 7)
+                || (product.getCurrentQty() > product.getLastStockQty() && diffDays > 7)
                 // Погрешность, если старое вернулось в сток более чем на 5 позиций
-                || product.getCurrentQty() > (product.getLastQty() + 5)
+                || product.getCurrentQty() > (product.getLastStockQty() + 5)
             ) {
                 product.appendNewStock(itemStockQty);
                 requireToSave = true;
@@ -45,9 +45,6 @@ function tProductRepository(type) {
         }
 
         return product;
-    };
-    this.getProductById = function(productId) {
-        return tProductLocal.get(this.type + '-' + productId);
     };
     this.getProductsBySameTitle = function(searchProduct) {
         var foundProducts = [];

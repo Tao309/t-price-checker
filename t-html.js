@@ -68,21 +68,21 @@ function tHtml(type, tPriceChecker) {
 
         var textContent;
         if (!currentQty) {
-            if (productModel.getLastQty()) {
-                textContent = 'Было: ' + productModel.getLastQty();
+            if (productModel.getLastStockQty()) {
+                textContent = 'Было: ' + productModel.getLastStockQty();
             }
         } else {
             textContent = currentQty;
-            textContent += ' / ' + productModel.getLastQty();
+            textContent += ' / ' + productModel.getLastStockQty();
         }
 
         currentQtyDiv.textContent = textContent;
 
         itemQtyDiv.append(currentQtyDiv);
 
-        if (productModel.getLastQtyDate()) {
+        if (productModel.getLastStockDate()) {
             var dateDiv = this.createElement('div', {
-                textContent: 'Доступно с ' + tProduct.convertDateToString(productModel.getLastQtyDate()),
+                textContent: 'Доступно с ' + tProduct.convertDateToString(productModel.getLastStockDate()),
                 className: 't-item-max-qty-date'
             });
 
@@ -90,7 +90,7 @@ function tHtml(type, tPriceChecker) {
         }
 
         var stocks = productModel.getStocks();
-        if (stocks.length > 0) {
+        if (stocks.length > 1) {
             var stockDiv = this.createElement('div', {
                 className: 't-item-stocks'
             });

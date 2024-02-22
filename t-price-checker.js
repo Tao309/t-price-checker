@@ -431,7 +431,7 @@ function tPriceChecker() {
 
         // Обработка позиций в наличии и недоступных
         document.querySelectorAll('.'+self.selectors.listItem + ',.'+self.selectors.listItemNotAvailable).forEach(function(item, i) {
-            self.initOnePosition(item, i);
+            self.initOnePositionByResponseIntercept(item, i);
         });
 
         this.appendHeadElement();
@@ -444,51 +444,14 @@ function tPriceChecker() {
 
         this.appendQtyLimitInfo();
     };
-    // Начинаем обработку одного элемента
-    this.initOnePosition = function(item, i) {
-        var self = this;
-
-        if(item.classList.contains('t-item-checked')) {return;}
-        item.classList.add('t-item-checked');
-
-        if (self.isResponseInterceptEnabled()) {
-            self.initOnePositionByResponseIntercept(item);
-            return;
-        }
-
-        var itemIdProperty = item.querySelector(self.getFindingProperty());
-
-        var jsonItem, productId, currentPrice = null, title = null, qty = 1, maxQty = 0,
-          product, isNotAvailable = false;
-
-        switch(self.type) {
-            case TYPE_FFAN:
-                productId = itemIdProperty.getAttribute('href').replace("/catalog/fiction/", "");
-                productId = productId.replace("/", '');
-                maxQty = item.querySelector('.inp_style').getAttribute('max');
-                title = item.querySelector('.item .bx_ordercart_itemtitle a').innerHTML.trim()
-                qty = item.querySelector('input.inp_style').value;
-                break;
-        }
-
-        if (self.type !== TYPE_OZON) {
-            var itemPrice = item.querySelector(self.selectors.itemPriceHtml);
-            if (itemPrice) {
-                currentPrice = self.formatPrice(itemPrice.innerHTML) / qty;
-            }
-        }
-
-        if (currentPrice) {
-            self.afterSuccessInitOneProduct(productId, item, currentPrice, title, maxQty);
-        } else if (isNotAvailable) {
-            product = self.tProductRepository.getProductById(productId);
-            self.appendOldMinPrice(product, item);
-        }
-    };
     // Начинаем обработку одного элемента через responseIntercept
     this.initOnePositionByResponseIntercept = function(item) {
-        var self = this, responseProductId = null, jsonItem = null, productId, currentPrice = null, title = null, qty = 1, itemStockQty = 0,
-          isNotAvailable = false;
+        if (item.classList.contains('t-item-checked')) {return;}
+        item.classList.add('t-item-checked');
+
+        var self = this, responseProductId = null, jsonItem = null,
+            productId, currentPrice = null, title = null, qty = 1, itemStockQty = 0,
+            isNotAvailable = false;
 
         if (self.type !== TYPE_KNIGOFAN) {
             var itemIdProperty = item.querySelector(self.getFindingProperty());

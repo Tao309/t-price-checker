@@ -168,12 +168,12 @@ abstract class tProduct {
     }
 
     // Получаем кол-во последнего стока.
-    getLastQty(): number {
+    getLastStockQty(): number {
         return this.getLastStock() ? this.getLastStock().qty : null;
     };
 
     // Получаем дату последнего стока.
-    getLastQtyDate(): Date {
+    getLastStockDate(): Date {
         return this.getLastStock() ? this.getLastStock().date : null;
     };
 
@@ -249,7 +249,7 @@ abstract class tProduct {
             return;
         }
 
-        let lastStockDate = this.getLastQtyDate();
+        let lastStockDate = this.getLastStockDate();
 
         var lastKey = stocks.length - 1;
         stocks[lastKey] = {
@@ -290,6 +290,11 @@ abstract class tProduct {
     // Получаем разницу между датами в днях
     static getDiffDateDays(fromDate: Date, toDate: Date): number {
         return Math.round((toDate.getTime() - fromDate.getTime()) / (1000 * 3600 * 24));
+    }
+
+    // Строка соответствует дате формата dd.mm.YYYY
+    static isStringDateMatch(value: string): boolean {
+        return !!value.match(/^(0[1-9]|[12][0-9]|3[01])[.](0[1-9]|1[012])[.](19|20)\d\d$/);
     }
     // Tools methods END
 }
@@ -343,14 +348,30 @@ class tProductLocal extends tProduct implements tProductInterface {
 
         if (typeof data.dates === 'object') {
             data.dates.forEach(function(row) {
-                let splitDate = row.date.split('.');
+                var date;
+                if (tProduct.isStringDateMatch(row.date)) {
+                    let splitDate = row.date.split('.');
+                    date = new Date(splitDate[1] + '-' + splitDate[0] + '-' + splitDate[2]);
+                } else {
+                    date = new Date(row.date);
+                }
 
-                self.appendNewMinPrice(row.price, new Date(splitDate[1] + '-' + splitDate[0] + '-' + splitDate[2]));
+                self.appendNewMinPrice(row.price, date);
             });
         } else if (typeof data.price !== 'undefined') {
+            var date;
+            if (data.lastDate !== 'undefined') {
+                if (tProduct.isStringDateMatch(data.lastDate)) {
+                    let splitDate = data.lastDate.split('.');
+                    date = new Date(splitDate[1] + '-' + splitDate[0] + '-' + splitDate[2]);
+                } else {
+                    date = new Date(data.lastDate);
+                }
+            }
+
             this.appendNewMinPrice(
                 data.price,
-                typeof data.lastDate !== 'undefined' ? data.lastDate : null
+                date
             );
         }
 
@@ -427,10 +448,10 @@ class tProductLocal extends tProduct implements tProductInterface {
             id: this.getData(tProduct.PARAM_PRODUCT_ID),
             title: this.getData(tProduct.PARAM_TITLE),
             price: this.getLastPrice(),
-            lastDate: tProduct.convertDateToString(this.getLastDate()),
+            lastDate: this.getLastDate(),
             type: this.getData(tProduct.PARAM_TYPE),
-            maxQty: this.getLastQty(),
-            maxQtyDate: this.getLastQtyDate(),
+            maxQty: this.getLastStockQty(),
+            maxQtyDate: this.getLastStockDate(),
             stock: this.getData(tProduct.PARAM_STOCKS),
             available: this.getData(tProduct.PARAM_AVAILABLE) ?? false,
             not_available_date_from: this.getData(tProduct.PARAM_NOT_AVAILABLE_DATE_FROM),
@@ -441,7 +462,7 @@ class tProductLocal extends tProduct implements tProductInterface {
         var dates  = [];
         this.getData(tProduct.PARAM_PRICE_DATES).forEach(function (priceDate: PriceDate) {
             dates.push({
-                date: tProduct.convertDateToString(priceDate.date),
+                date: priceDate.date,
                 price: priceDate.price
             });
         });
