@@ -905,10 +905,17 @@ function tHtml(type) {
 
         return div;
     };
+    this.getCheckReturnsInfo = function (count) {
+        var div = document.createElement('div');
+        div.className = 't-changed-result check-returns';
+        div.textContent = 'CheckReturns: ' + count;
+
+        return div;
+    }
     this.getCheckPriceInfo = function(count) {
         var div = document.createElement('div');
         div.className = 't-changed-result check-price';
-        div.textContent = 'CheckPrice: '+count;
+        div.textContent = 'CheckPrice: ' + count;
 
         return div;
     };
@@ -1342,8 +1349,118 @@ function tProductRepository(type) {
     };
 }
 
+function tEventListener(initType) {
+
+}
+
+function tProduct() {
+    this.isAvailable = function (product) {
+        return product.available === true || !isExists(product.available);
+    }
+}
+
+function tResponseInterceptor(type) {
+    this.type = type;
+
+    this.init = function() {
+        addJS_Node ('xhrScriptInterceptor', this.scriptWrapper);
+    };
+
+    this.scriptWrapper = function() {
+        var origOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url) {
+            // https://web-gate.chitai-gorod.ru/api/v1/cart
+            this.addEventListener('load', function() {
+                console.log('url: ', url);
+                if (url === 'https://web-gate.chitai-gorod.ru/api/v1/cart') {
+                    var products = JSON.parse(this.responseText).products;
+                    console.log(products);
+                }
+            });
+            origOpen.apply(this, arguments);
+        };
+
+        const constantMock = window.fetch;
+        window.fetch = function() {
+            return new Promise((resolve, reject) => {
+                constantMock
+                  .apply(this, arguments)
+                  .then((response) => {
+                      console.log('url: ', response.url);
+
+                      resolve(response);
+                      return response.clone().json();
+                  })
+                  .then(function(data) {
+
+
+                      if (typeof data.products !== 'undefined') {
+                          console.log('chita-gorod products', data.products);
+
+                      }
+
+                      if (typeof data.value !== 'undefined' && data.value.data.basket.basketItems) {
+                          console.log('available', data.value.data.basket.basketItems);
+                          // item."canBeOrdered": true,
+                      }
+
+                      //console.log(JSON.parse(data.layoutTrackingInfo));
+
+                      // RecomsInCartPaginator
+                      // pageType = cart
+                      //if (typeof data.layoutTrackingInfo != 'undefined' && JSON.parse(data.layoutTrackingInfo).layoutContainer === 'SplitInCartPaginator') {
+                      if (JSON.parse(data.layoutTrackingInfo).pageType === 'cart') {
+                          // split-1436758-default-1
+                          // split-1436758-default-1-2
+
+                          // <div id="state-split-1436758-default-1" data-state="{
+
+                          var firstKey = Object.keys(data.widgetStates)[0]; // в наличии
+                          var secondKey = Object.keys(data.widgetStates)[1]; // недоступны
+
+                          if (firstKey.split('-').pop() > 1) {
+                              firstKey = Object.keys(data.widgetStates)[1];
+                              secondKey = Object.keys(data.widgetStates)[0];
+                          }
+
+                          console.log('available', JSON.parse(data.widgetStates[firstKey]).items);
+                          console.log('unavailable', JSON.parse(data.widgetStates[secondKey]).items);
+
+                          JSON.parse(data.widgetStates[firstKey]).items.forEach(function(item) {
+                              // Сверка по ид картинки, цене, макс кол-ву
+                              console.log(
+                                item.products[0].id,
+                                item.products[0].image,
+                                item.products[0].titleColumn[1].actionText.text.text,
+                                item.products[0].priceColumn[0].priceWithTitle.price,
+                                item.quantity.quantity,
+                                item.quantity.maxQuantity
+                              );
+                          });
+
+                          return;
+                      }
+                  })
+                  .catch((error) => {
+                      reject(error);
+                  })
+            });
+        };
+    };
+
+    this.addJS_Node = function(id, funcToRun) {
+        var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
+
+        GM_addElement(target, 'script', {
+            id: id,
+            type: "text/javascript",
+            textContent: '(' + funcToRun.toString() + ')()',
+        });
+    };
+}
+
 var priceChecker = new tPriceChecker();
-priceChecker.init();
+priceChecker.init([TYPE_CHITAI_GOROD, TYPE_WILDBERRIES, TYPE_OZON, TYPE_KNIGOFAN]);
 
 
 /*
