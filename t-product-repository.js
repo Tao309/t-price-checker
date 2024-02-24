@@ -14,20 +14,36 @@ function tProductRepository(type) {
             }
 
             var diffDays = product.getLastStockDate() ? tProduct.getDiffDateDays(product.getLastStockDate(), (new Date())) : null;
+            // Прошло ли больше дней с последнего стока.
+            let isStockDaysLimitPassed = diffDays && diffDays >= 6;
+            // Текущие кол-во больше последнего стока.
+            let isCurrentQtyMoreThanLastStock = product.getLastStockQty() && product.getCurrentQty() > product.getLastStockQty();
+            // На сколько изменились текущее кол-во по сравнению с последним стоком.
+            let stockChangePercent = 0;
+            // Лимит допустимым для изменения кол-ва по стоку в %.
+            let limitStockPercent = 20;
+            // Изменение стока превысило допустимое значение по %.
+            let isStockMoreThanLimitChanged = false;
+
+            if (isCurrentQtyMoreThanLastStock) {
+                let diffQty = product.getCurrentQty() - product.getLastStockQty();
+                stockChangePercent = ((diffQty / product.getLastStockQty()) * 100).toFixed(1);
+                isStockMoreThanLimitChanged = stockChangePercent > limitStockPercent;
+            }
 
             if (
                 // Кол-во стало больше, но не прошло много дней, чтобы это был новый сток
-                product.getCurrentQty() > product.getLastStockQty() && ((product.getCurrentQty() - product.getLastStockQty()) <= 5)  && diffDays && diffDays < 6
+                isCurrentQtyMoreThanLastStock && !isStockMoreThanLimitChanged  && !isStockDaysLimitPassed
             ) {
                 product.changeLastStockQty(product.getCurrentQty());
                 requireToSave = true;
             } else if (
                 // Был недоступен и стал доступен, с большим кол-вом чем в последнем стоке
-                (product.getCurrentQty() > product.getLastStockQty() && product.isBecomeAvailable())
+                (isCurrentQtyMoreThanLastStock && product.isBecomeAvailable())
                 // Разницу между стоком и сегодня 7 дней прошло
-                || (product.getCurrentQty() > product.getLastStockQty() && diffDays && diffDays >= 6)
+                || (isCurrentQtyMoreThanLastStock && diffDays && isStockDaysLimitPassed)
                 // Погрешность, если старое вернулось в сток более чем на 5 позиций
-                || product.getCurrentQty() > (product.getLastStockQty() + 5)
+                || isStockMoreThanLimitChanged
             ) {
                 product.appendNewStock(itemStockQty);
                 requireToSave = true;
