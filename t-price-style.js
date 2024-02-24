@@ -5,14 +5,16 @@ function tPriceStyle(initType) {
         head.innerHTML += `<style>
      .t-button {border: 0;background: none;}
      .t-button:hover {cursor:pointer;}
+     
+     .t-button.t-button-submit {}
       
      .t-basket-head {position:relative;}
 
-     .t-window-shadow {z-index: 100; background:rgba(0,0,0,0.8); position:fixed; left:0; top:0%; width:100%; height:100%;}
-     .t-window-edit {z-index: 110; position:fixed; left:50%; top:50%; width:420px; margin-left: -210px;}
+     .t-window-shadow {z-index: 100; background:rgba(0,0,0,0.8); position:fixed; left:0; top: 0; width: 100%; height: 100%;}
+     .t-window-edit {z-index: 110; position:fixed; left:50%; top:35%; width:440px; margin-left: -220px;}
      .t-window-edit .t-window-body {padding: 20px; border-radius: 10px; background: #fff;}
      .t-window-edit .t-window-body input[type=text] {border: 1px solid #d1d1d1; width:300px; padding: 2px 6px;}
-     .t-window-edit .t-window-body button[type=submit] {margin-left: 20px;}
+     .t-window-edit .t-window-body button[type=submit] {margin-left: 10px;}
      .t-window-edit .t-window-body .t-window-info {color: #626262; padding: 0 0 10px 4px;}
 
     .t-old-price .t-title-edit {transform: rotate(90deg); display: inline-block; margin-left: 10px;}
@@ -22,9 +24,12 @@ function tPriceStyle(initType) {
     .t-old-price .t-check-price:before {content:'⚠'; color: #dadada; font-size: 1.4em;}
     .t-old-price .t-check-price.t-check-price-available:before {color: #08d106;}
     
-    .t-old-price .remove-from-storage-button {display:none;position:absolute;font-size: 18px; font-weight:bold;color:red;margin-left:14px;}
+    .t-old-price .remove-from-storage-button {display:none; position:absolute; font-size: 18px; font-weight:bold; color:red; top: 35px; left: 35px;}
     .t-old-price .remove-from-storage-button:before {content: '✖';}
     .t-old-price:hover .remove-from-storage-button {display:inline-block;}
+    
+    .t-old-price .set-release-date-button {transform: rotate(90deg); display: inline-block; margin-left: 10px}
+    .t-old-price .set-release-date-button::before {content:'✎'; color: dodgerblue;}
     
     .t-list-item {position: relative; margin: 4px 0;}
     .t-list-item::before {content:''; width: 4px; height: 100%; position: absolute; left: -8px; top: 0;background-color: #028502;opacity: 0.7;}
@@ -44,12 +49,12 @@ function tPriceStyle(initType) {
     .t-price-arrow.down {color: green;}
     .t-price-arrow.down:before {content: '↓';}
     .t-price-arrow.up:before, .t-price-arrow.down:before {padding-right: 4px;}
-    .t-old-price-percent {text-align:left;width:100px;position:relative;}
+    .t-old-price-percent {text-align:left;width:130px;position:relative;}
     .t-price-percent {font-size:14px;padding-left: 5px;color:#707070;}
 
-    .t-old-price {position: absolute; top:0; cursor:default; width: 140px; padding-left: 35px;}
+    .t-old-price {position: absolute; top:0; cursor:default; width: 140px; height: 95px; padding-left: 35px;}
     .t-old-price > span {display:block;text-align:left;}
-    .t-old-price > .unavailable-info {font-size: 10px; margin-bottom: 4px; width: 140px;font-size: 12px;color: #a92424;}
+    .t-old-price > .unavailable-info {margin-bottom: 4px; width: 140px;font-size: 12px;color: #a92424;}
     .t-old-price > .t-price-old-date {font-size: 10px; margin-bottom: 4px;}
     .t-new-min-price {position: absolute; left:30px; top:30px; color: #4fc78a;}
     .t-old-price .t-hover-field {z-index:5; position:absolute; left: -130px; top:0; width: 160px; display:none;}
@@ -72,6 +77,12 @@ function tPriceStyle(initType) {
     .t-same-products .t-same-product a.up:after {content: '↑';}
     .t-same-products .t-same-product a.down:after {content: '↓';}
     .t-same-products .t-same-product a:hover {color: #0395c1;}
+    
+    .t-release-date {color: #fbfbfb; padding: 6px 10px; border-radius: 6px; z-index: 4;}
+    .t-list-item > .t-release-date {position: absolute; left: 110px; top: 105px;}
+    .t-item-title-column > .t-release-date {display: inline-block; margin-top: 8px;}
+    .t-release-date.is-waiting {background: #0e7ab9; opacity: 0.6;}
+    .t-release-date.is-available {background: #0eb972;}
 
     .t-head-result {font-size: 16px; border: 1px solid #edf3f7; padding: 4px; z-index: 5; background: #fff; position: fixed; left: 0; top: 136px;
         width: 220px;

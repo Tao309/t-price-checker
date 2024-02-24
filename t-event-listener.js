@@ -1,10 +1,12 @@
 function tEventListener(type) {
     this.type = type;
+    this.tHtml;
     this.tProductRepository;
     this.tProduct;
 
     this.init = function () {
         this.tProductRepository = new tProductRepository(this.type);
+        this.tHtml = new tHtml(this.type);
     }
 
     // После успешной обработки позиции для списка
@@ -14,6 +16,17 @@ function tEventListener(type) {
                 item.setAttribute('data-product-returns', 1);
                 tPriceChecker.checkReturnsCount++;
             }
+        }
+
+        // Добавляем кол-во дней до релиза
+        this.tHtml.appendReleaseDate(item, productModel);
+
+        if (productModel.isAvailableForReleaseDate()) {
+            item.setAttribute('data-product-is-available-for-release-date', 1);
+            tPriceChecker.isAvailableForReleaseDate++;
+        } else if(productModel.isWaitingForReleaseDate()) {
+            item.setAttribute('data-product-is-waiting-for-release-date', 1);
+            tPriceChecker.isWaitingForReleaseDate++;
         }
     }
 

@@ -48,6 +48,8 @@ abstract class tProduct {
     static readonly PARAM_PRODUCT_ID = 'product_id';
     static readonly PARAM_TYPE = 'type';
     static readonly PARAM_TITLE = 'title';
+    static readonly PARAM_DATE_CREATED = 'date_created';
+    static readonly PARAM_DATE_UPDATED = 'date_updated';
     static readonly PARAM_AVAILABLE = 'available';
     static readonly PARAM_AVAILABLE_DATE_FROM = 'available_date_from';
     static readonly PARAM_NOT_AVAILABLE_DATE_FROM = 'not_available_date_from';
@@ -58,6 +60,7 @@ abstract class tProduct {
     // static readonly PARAM_STOCK_QTY = 'stock_qty';
     static readonly PARAM_STOCKS = 'stocks';
     static readonly PARAM_LISTEN_PRICE_VALUE = 'listen_price_value';
+    static readonly PARAM_RELEASE_DATE = 'release_date';
 
     static readonly PARAM_CURRENT_PRICE = 'current_price';
     static readonly PARAM_CURRENT_QTY = 'current_qty';
@@ -124,6 +127,22 @@ abstract class tProduct {
         return this.getData(tProduct.PARAM_TITLE);
     };
 
+    getDateCreated(): Date|null {
+        return this.getData(tProduct.PARAM_DATE_CREATED) ? new Date(this.getData(tProduct.PARAM_DATE_CREATED)) : null;
+    };
+
+    setDateCreated(date: Date) {
+        this.setData(tProduct.PARAM_DATE_CREATED, date);
+    };
+
+    getDateUpdated(): Date|null {
+        return this.getData(tProduct.PARAM_DATE_UPDATED) ? new Date(this.getData(tProduct.PARAM_DATE_UPDATED)) : null;
+    };
+
+    setDateUpdated(date: Date) {
+        this.setData(tProduct.PARAM_DATE_UPDATED, date);
+    };
+
     getType(): string {
         return this.getData(tProduct.PARAM_TYPE);
     };
@@ -150,16 +169,17 @@ abstract class tProduct {
         this.save();
     };
 
+    // Получаем последний сток.
+    getLastPriceDate(): PriceDate|null {
+        return this.getData(tProduct.PARAM_PRICE_DATES) ? this.getData(tProduct.PARAM_PRICE_DATES).slice(-1).pop() : null;
+    }
+
     getLastPrice(): number {
-        return this.getData(tProduct.PARAM_PRICE_DATES)
-            ? this.getData(tProduct.PARAM_PRICE_DATES).slice(-1).pop().price
-            : null;
+        return this.getLastPriceDate() ? this.getLastPriceDate().price : null;
     };
 
     getLastDate(): Date {
-        return this.getData(tProduct.PARAM_PRICE_DATES)
-            ? this.getData(tProduct.PARAM_PRICE_DATES).slice(-1).pop().date
-            : null;
+        return this.getLastPriceDate() ? this.getLastPriceDate().date : null;
     };
 
     // Получаем последний сток.
@@ -260,14 +280,14 @@ abstract class tProduct {
         this.setData(tProduct.PARAM_STOCKS, stocks);
     };
 
-    // New set value to model BEGIN
+    // New get/set value to model BEGIN
     setTitle(title: string) {
         if(typeof title === 'undefined') {
             console.log('Title is undefined for ' + this.getId());
             return;
         }
 
-        this.setData(tProduct.PARAM_TITLE, title);
+        this.setData(tProduct.PARAM_TITLE, title.trim());
     };
 
     getListenPriceValue(): number|null {
@@ -280,11 +300,79 @@ abstract class tProduct {
             typeof price !== 'undefined' ? price : null
         )
     };
-    // New set value to model END
+
+    getReleaseDate(): Date {
+        return this.getData(tProduct.PARAM_RELEASE_DATE) ? new Date(this.getData(tProduct.PARAM_RELEASE_DATE)) : null;
+    };
+
+    // Переводим из строки только при сете, потому что вводим dd.mm.YYYY
+    setReleaseDate(releaseDate?: string) {
+        this.setData(
+            tProduct.PARAM_RELEASE_DATE,
+            releaseDate ? tProduct.convertStringToDate(releaseDate) : null
+        )
+    };
+
+    // Ожидается в продаже.
+    isWaitingForReleaseDate() {
+        return this.getWaitingForReleaseDays() > 0;
+    };
+
+    // Оставшиеся кол-во дней до релиза, если меньше дня, то день.
+    getWaitingForReleaseDays(): number {
+        let currentDate = new Date();
+        if (!this.getReleaseDate() || this.getReleaseDate() < currentDate) {
+            return 0;
+        }
+
+        let daysDiff = tProduct.getDiffDateDays(new Date(), this.getReleaseDate());
+
+        return daysDiff > 0 ? daysDiff : 1;
+    };
+
+    // Доступен к продаже.
+    isAvailableForReleaseDate() {
+        return this.getAvailableForReleaseDays() > 0;
+    };
+
+    // Сколько дней уже доступен к покупке после дня релиза.
+    getAvailableForReleaseDays(): number {
+        if (!this.getReleaseDate()) {
+            return 0;
+        }
+
+        let showForDays = 5;
+        let limitDate = this.getReleaseDate();
+        let currentDate = new Date();
+
+        if (limitDate > currentDate) {
+            return 0;
+        }
+
+        limitDate.setHours(limitDate.getHours() + showForDays * 24);
+
+        if (limitDate < currentDate) {
+            return 0;
+        }
+
+        let daysDiff = tProduct.getDiffDateDays(this.getReleaseDate(), new Date());
+
+        return daysDiff > 0 ? daysDiff : 1;
+    };
+    // New get/set value to model END
 
     // Tools methods BEGIN
     static convertDateToString(date: Date): string {
         return date.toJSON().slice(0,10).split('-').reverse().join('.');
+    };
+
+    static convertStringToDate(dateString: string): Date {
+        let splitDate = dateString.split('.');
+        let date = new Date(splitDate[1] + '-' + splitDate[0] + '-' + splitDate[2]);
+        let hours = 3; // Текущий часовой пояс.
+        date.setHours(date.getHours() + hours);
+
+        return date;
     };
 
     // Получаем разницу между датами в днях
@@ -346,12 +434,23 @@ class tProductLocal extends tProduct implements tProductInterface {
             this.setData(tProduct.PARAM_LISTEN_PRICE_VALUE, data.checkPrice);
         }
 
+        if (typeof data.releaseDate !== 'undefined') {
+            this.setData(tProduct.PARAM_RELEASE_DATE, data.releaseDate);
+        }
+
+        if (typeof data.dateCreated !== 'undefined') {
+            this.setDateCreated(data.dateCreated);
+        }
+
+        if (typeof data.dateUpdated !== 'undefined') {
+            this.setDateUpdated(data.dateUpdated);
+        }
+
         if (typeof data.dates === 'object') {
             data.dates.forEach(function(row) {
                 var date;
                 if (tProduct.isStringDateMatch(row.date)) {
-                    let splitDate = row.date.split('.');
-                    date = new Date(splitDate[1] + '-' + splitDate[0] + '-' + splitDate[2]);
+                    date = tProduct.convertStringToDate(row.date);
                 } else {
                     date = new Date(row.date);
                 }
@@ -362,8 +461,7 @@ class tProductLocal extends tProduct implements tProductInterface {
             var date;
             if (data.lastDate !== 'undefined') {
                 if (tProduct.isStringDateMatch(data.lastDate)) {
-                    let splitDate = data.lastDate.split('.');
-                    date = new Date(splitDate[1] + '-' + splitDate[0] + '-' + splitDate[2]);
+                    date = tProduct.convertStringToDate(data.lastDate);
                 } else {
                     date = new Date(data.lastDate);
                 }
@@ -414,6 +512,8 @@ class tProductLocal extends tProduct implements tProductInterface {
             productModel.appendNewStock(currentQty);
         }
 
+        productModel.setDateCreated(new Date());
+
         return productModel;
     };
 
@@ -442,8 +542,6 @@ class tProductLocal extends tProduct implements tProductInterface {
     };
 
     save() {
-        var self = this;
-
         var product = {
             id: this.getData(tProduct.PARAM_PRODUCT_ID),
             title: this.getData(tProduct.PARAM_TITLE),
@@ -454,9 +552,12 @@ class tProductLocal extends tProduct implements tProductInterface {
             maxQtyDate: this.getLastStockDate(),
             stock: this.getData(tProduct.PARAM_STOCKS),
             available: this.getData(tProduct.PARAM_AVAILABLE) ?? false,
-            not_available_date_from: this.getData(tProduct.PARAM_NOT_AVAILABLE_DATE_FROM),
-            available_date_from: this.getData(tProduct.PARAM_AVAILABLE_DATE_FROM),
-            checkPrice: this.getData(tProduct.PARAM_LISTEN_PRICE_VALUE)
+            not_available_date_from: this.getNotAvailableDateFrom(),
+            available_date_from: this.getAvailableDateFrom(),
+            checkPrice: this.getData(tProduct.PARAM_LISTEN_PRICE_VALUE),
+            releaseDate: this.getReleaseDate(),
+            dateCreated: this.getDateCreated(),
+            dateUpdated: new Date()
         };
 
         var dates  = [];

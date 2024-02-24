@@ -13,17 +13,19 @@ function tProductRepository(type) {
                 requireToSave = true;
             }
 
-            var diffDays = tProduct.getDiffDateDays(product.getLastStockDate(), (new Date()));
+            var diffDays = product.getLastStockDate() ? tProduct.getDiffDateDays(product.getLastStockDate(), (new Date())) : null;
 
-            // Кол-во стало больше, но не прошло много дней, чтобы это был новый сток
-            if (product.getCurrentQty() > (product.getLastStockQty() + 5) && diffDays < 7) {
+            if (
+                // Кол-во стало больше, но не прошло много дней, чтобы это был новый сток
+                product.getCurrentQty() > product.getLastStockQty() && ((product.getCurrentQty() - product.getLastStockQty()) <= 5)  && diffDays && diffDays < 6
+            ) {
                 product.changeLastStockQty(product.getCurrentQty());
                 requireToSave = true;
             } else if (
                 // Был недоступен и стал доступен, с большим кол-вом чем в последнем стоке
                 (product.getCurrentQty() > product.getLastStockQty() && product.isBecomeAvailable())
                 // Разницу между стоком и сегодня 7 дней прошло
-                || (product.getCurrentQty() > product.getLastStockQty() && diffDays > 7)
+                || (product.getCurrentQty() > product.getLastStockQty() && diffDays && diffDays >= 6)
                 // Погрешность, если старое вернулось в сток более чем на 5 позиций
                 || product.getCurrentQty() > (product.getLastStockQty() + 5)
             ) {

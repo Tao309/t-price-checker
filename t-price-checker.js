@@ -22,10 +22,12 @@ function tPriceChecker() {
     this.addBasketHead = true;
     this.responseInterceptEnabled = []
 
-    this.priceUpChanged = 0;// кол-во товаров с увеличенной ценой
-    this.priceDownChanged = 0;// кол-во товаров с уменьшенной ценой
-    this.checkPriceCount = 0;// кол-во товаров с ценой, ниже отслеживаемой
-    this.checkReturnsCount = 0;// кол-во товаров, которые снова появились в продаже
+    this.priceUpChanged = 0;// кол-во товаров с увеличенной ценой.
+    this.priceDownChanged = 0;// кол-во товаров с уменьшенной ценой.
+    this.checkPriceCount = 0;// кол-во товаров с ценой, ниже отслеживаемой.
+    this.checkReturnsCount = 0;// кол-во товаров, которые снова появились в продаже.
+    this.isAvailableForReleaseDate = 0; // доступен к продаже.
+    this.isWaitingForReleaseDate = 0; // ожидается в продаже.
 
     this.resetCounts = function() {
         this.priceUpChanged = 0;
@@ -287,20 +289,20 @@ function tPriceChecker() {
     };
     // Получаем один элемент для обработки
     this.handleAvailableItem = function(item, i) {
-        var priceColumn = null, qtyColumn = null, imageColumn = null;
+        var priceColumn, titleColumn, qtyColumn, imageColumn;
 
         switch(this.type) {
             case TYPE_KNIGOFAN:
                 priceColumn = item.querySelector('td.basket-items-list-item-price');
                 qtyColumn = item.querySelector('td.basket-items-list-item-amount');
 
-                this.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
+                this.addCustomClassNamesToItems(item, priceColumn, titleColumn, qtyColumn);
                 break;
             case TYPE_FFAN:
                 priceColumn = item.querySelector('td.price');
                 qtyColumn = item.querySelector('td.quantity');
 
-                this.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
+                this.addCustomClassNamesToItems(item, priceColumn, titleColumn, qtyColumn);
                 break;
             case TYPE_OZON:
                 var imageEl = null, qtyEl = null;
@@ -334,7 +336,7 @@ function tPriceChecker() {
 
                 imageColumn = item.children[0].children[0].children[0].children[0].children[0].children[1];
 
-                this.addCustomClassNamesToItems(item, priceColumn, qtyColumn, imageColumn);
+                this.addCustomClassNamesToItems(item, priceColumn, titleColumn, qtyColumn, imageColumn);
                 break;
             case TYPE_WILDBERRIES:
                 if (item.classList.contains('not-available')) {
@@ -344,9 +346,10 @@ function tPriceChecker() {
                 }
 
                 priceColumn = item.querySelector('.list-item__price');
+                titleColumn = item.querySelector('.list-item__good-info');
                 qtyColumn = item.querySelector('.list-item__count');
 
-                this.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
+                this.addCustomClassNamesToItems(item, priceColumn, titleColumn, qtyColumn);
                 break;
             case TYPE_CHITAI_GOROD:
                 priceColumn = item.querySelector('.product-price');
@@ -357,13 +360,17 @@ function tPriceChecker() {
                 }
                 qtyColumn = item.querySelector('.cart-item__counter');
 
-                this.addCustomClassNamesToItems(item, priceColumn, qtyColumn);
+                this.addCustomClassNamesToItems(item, priceColumn, titleColumn, qtyColumn);
                 break;
         }
     };
-    this.addCustomClassNamesToItems = function(item, priceColumn = null, qtyColumn = null, imageColumn = null) {
+    this.addCustomClassNamesToItems = function(item, priceColumn = null, titleColumn = null, qtyColumn = null, imageColumn = null) {
         if (priceColumn) {
             priceColumn.classList.add('t-item-price-column');
+        }
+
+        if (titleColumn) {
+            titleColumn.classList.add('t-item-title-column');
         }
 
         if (qtyColumn) {
@@ -441,6 +448,8 @@ function tPriceChecker() {
         this.appendCheckerElement('check-price', this.checkPriceCount);
         this.appendCheckerElement('price-decrease', this.priceDownChanged);
         this.appendCheckerElement('returns', this.checkReturnsCount);
+        this.appendCheckerElement('is-available-for-release-date', this.isAvailableForReleaseDate);
+        this.appendCheckerElement('is-waiting-for-release-date', this.isWaitingForReleaseDate);
 
         this.appendQtyLimitInfo();
     };

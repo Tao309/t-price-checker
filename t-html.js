@@ -6,17 +6,19 @@ function tHtml(type, tPriceChecker) {
     this.checkerElements = {
         'check-price': {label: 'отслеживаемые'},
         'price-decrease': {label: 'понижение'},
-        'returns': {label: 'снова в продаже'}
+        'returns': {label: 'снова в продаже'},
+        'is-available-for-release-date': {label: 'В продаже'},
+        'is-waiting-for-release-date': {label: 'Ожидается'}
     };
 
-    this.createElement = function (type, data = {}) {
+    this.createElement = function (type, data = {}, attr = {}) {
         if (!isExists(type)) {
-            console.log('Create element type {' + type + '} is not exists');
+            console.error('Create element type {' + type + '} is not exists');
             return;
         }
 
-        if (!['div', 'span', 'a', 'button'].includes(type)) {
-            console.log('Create element type {' + type + '} is not available');
+        if (!['div', 'span', 'a', 'button', 'form', 'input'].includes(type)) {
+            console.error('Create element type {' + type + '} is not available');
             return;
         }
 
@@ -31,8 +33,12 @@ function tHtml(type, tPriceChecker) {
         if (isExists(data.src)) {el.src = data.src;}
         if (isExists(data.name)) {el.name = data.name;}
         if (isExists(data.textContent)) {el.textContent = data.textContent;}
-        if (isExists(data.content)) {el.content = data.textContent;}
+        if (isExists(data.content)) {el.textContent = data.content;}
         if (isExists(data.title)) {el.title = data.title;}
+        if (isExists(data.title)) {el.title = data.title;}
+        if (isExists(data.disabled)) {el.disabled = data.disabled;}
+
+        if (isExists(attr.maxlength)) {el.setAttribute('maxlength', attr.maxlength);}
 
         return el;
     };
@@ -116,19 +122,6 @@ function tHtml(type, tPriceChecker) {
 
         return itemQtyDiv;
     };
-    /*
-    this.getNewMinPricesInfo = function(count) {
-        if(count <= 0) {
-            return;
-        }
-
-        var div = document.createElement('div');
-        div.className = 't-changed-result min-price';
-        div.textContent = 'Новые мин цен: '+count;
-
-        return div;
-    };
-    */
     this.getPriceChangedInfo = function(count, type='up') {
         var div = document.createElement('div');
         var className = 't-changed-result ';
@@ -167,7 +160,6 @@ function tHtml(type, tPriceChecker) {
 
         return div;
     };
-
     this.getCheckerElementId = function (type) {
         return 'show_' + type.replaceAll('-', '_');
     }
@@ -189,7 +181,6 @@ function tHtml(type, tPriceChecker) {
 
         return div;
     }
-
     this.getButtonSortQty = function() {
         var buttonSortQty = document.createElement('button');
         buttonSortQty.textContent = 'sort by qty';
@@ -241,135 +232,6 @@ function tHtml(type, tPriceChecker) {
         });
 
         return div;
-    };
-    this.closeEditWindow = function() {
-        if (document.getElementById('t-window-edit')) {document.getElementById('t-window-edit').remove();}
-        if (document.getElementById('t-window-shadow')) {document.getElementById('t-window-shadow').remove();}
-    };
-    this.getWindowShadow = function() {
-        var self = this;
-        var editWindowShadow = document.createElement("div");
-        editWindowShadow.className = 't-window-shadow';
-        editWindowShadow.id = 't-window-shadow';
-        editWindowShadow.addEventListener("click", function (event) {
-            event.preventDefault();
-            self.closeEditWindow();
-        });
-
-        return editWindowShadow;
-    };
-    this.getEditWindow = function(productId, tPriceChecker) {
-        var self = this;
-        var editWindow = document.createElement("div");
-        editWindow.className = 't-window-edit';
-        editWindow.id = 't-window-edit';
-
-        var editBody = document.createElement("div");
-        editBody.className = 't-window-body';
-
-        var productInfo = document.createElement("div");
-        productInfo.className = 't-window-info';
-
-        var editForm = document.createElement("form");
-        var editInput = document.createElement("input");
-        editInput.type = 'text';
-        editInput.setAttribute('maxlength', '100');
-        var editSumbitButton = document.createElement("button");
-        editSumbitButton.className = 't-button t-button-submit';
-        editSumbitButton.type = 'submit';
-        editSumbitButton.textContent = 'Save';
-
-        var productModel = tProductLocal.get(this.type + '-' + productId);
-
-        editForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            productModel.setTitle(event.target.querySelector('input[type=text]').value);
-            productModel.save();
-
-            self.closeEditWindow();
-        })
-
-        if (productModel) {
-            editInput.value = productModel.getTitle();
-            productInfo.textContent = this.type + '-' + productId;
-        }
-
-        editForm.append(editInput);
-        editForm.append(editSumbitButton);
-        editBody.append(productInfo);
-        editBody.append(editForm);
-        editWindow.append(editBody);
-
-        return editWindow;
-    };
-    this.openCheckPriceWindow = function(productId, tPriceChecker, buttonElement) {
-        var self = this;
-        var editWindow = document.createElement("div");
-        editWindow.className = 't-window-edit';
-        editWindow.id = 't-window-edit';
-
-        var editBody = document.createElement("div");
-        editBody.className = 't-window-body';
-
-        var productInfo = document.createElement("div");
-        productInfo.className = 't-window-info';
-
-        var editForm = document.createElement("form");
-        var editInput = document.createElement("input");
-        editInput.type = 'text';
-        editInput.setAttribute('maxlength', '5');
-        var editSumbitButton = document.createElement("button");
-        editSumbitButton.className = 't-button t-button-submit';
-        editSumbitButton.type = 'submit';
-        editSumbitButton.textContent = 'Save';
-
-        var productModel = tProductLocal.get(this.type + '-' + productId);
-
-        editForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            productModel.setListenPriceValue(event.target.querySelector('input[type=text]').value);
-            productModel.save();
-
-            self.closeEditWindow();
-        });
-
-        editInput.addEventListener('keyup', function() {
-            this.value = this.value.replace(/[^0-9\.]/g, '');
-        });
-
-        if (productModel.getListenPriceValue() > 0) {
-            var resetButton = document.createElement("button");
-            resetButton.className = 't-button t-button-reset';
-            resetButton.textContent = 'Reset CheckPrice';
-
-            resetButton.addEventListener('click', function(event) {
-                event.preventDefault();
-
-                productModel.setListenPriceValue(null);
-                productModel.save();
-
-                buttonElement.classList.remove('t-check-price-available');
-                self.closeEditWindow();
-            });
-        }
-
-        if (productModel) {
-            editInput.value = productModel.getListenPriceValue() ?? '';
-            productInfo.textContent = 'Set CheckPrice for: ' + this.type + '-' + productId;
-        }
-
-        editForm.append(editInput);
-        editForm.append(editSumbitButton);
-        editBody.append(productInfo);
-        editBody.append(editForm);
-        if (productModel.getListenPriceValue() > 0) {
-            editBody.append(resetButton);
-        }
-        editWindow.append(editBody);
-
-        return editWindow;
     };
     this.getPriceElement = function(productModel, itemElement) {
         var self = this;
@@ -444,7 +306,7 @@ function tHtml(type, tPriceChecker) {
         spanEdit.setAttribute('title', 'Edit title');
         spanEdit.addEventListener("click", function (event) {
             event.preventDefault();
-            self.openEditTitleWindow(event.target, productModel.getProductId());
+            self.openEditTitleWindow(productModel, event.target, itemElement);
         });
         oldPricePercentDiv.append(spanEdit);
 
@@ -460,7 +322,7 @@ function tHtml(type, tPriceChecker) {
         spanCheckPrice.setAttribute('title', 'Set Check Price');
         spanCheckPrice.addEventListener("click", function (event) {
             event.preventDefault();
-            self.openEditCheckPriceWindow(event.target, productModel.getProductId());
+            self.openEditCheckPriceWindow(productModel, event.target, itemElement);
         });
         oldPricePercentDiv.append(spanCheckPrice);
 
@@ -475,8 +337,18 @@ function tHtml(type, tPriceChecker) {
 
             self.tEventListener.whenRemoveFromStorage(element);
         });
-
         oldPricePercentDiv.append(removeButton);
+
+        var releaseDateButton = self.createElement('button', {
+            title: 'Set Release Date',
+            class: 'set-release-date-button t-button'
+        });
+        releaseDateButton.addEventListener('click', function(event) {
+            event.preventDefault();
+
+            self.openEditReleaseDateWindow(productModel, event.target, itemElement);
+        });
+        oldPricePercentDiv.append(releaseDateButton);
 
         div.append(oldPricePercentDiv);
 
@@ -503,6 +375,7 @@ function tHtml(type, tPriceChecker) {
 
         parentEl.append(hoverField);
     };
+
     this.appendPriceDates = function(hoverField, productModel, parentEl) {
         if(!productModel.getPriceDateForViewCount()) {return;}
 
@@ -535,14 +408,99 @@ function tHtml(type, tPriceChecker) {
 
         hoverField.append(el);
     };
-    this.openEditTitleWindow = function(el, productId) {
-        this.closeEditWindow();
-        document.querySelector('body').append(this.getWindowShadow());
-        document.querySelector('body').append(this.getEditWindow(productId, this));
+    this.appendReleaseDate = function (el, productModel) {
+        let oldEl = el.querySelector('.t-release-date');
+        if (oldEl) {
+            oldEl.remove();
+        }
+
+        if (!productModel.getReleaseDate()) {
+            return;
+        }
+
+        let elToAppend = el.querySelector('.t-item-title-column') ? el.querySelector('.t-item-title-column') : el;
+
+        let isAlreadyAvailable = productModel.isAvailableForReleaseDate();
+        let isWaiting = productModel.isWaitingForReleaseDate();
+
+        if (isAlreadyAvailable || isWaiting) {
+            let releaseDateDiv = this.createElement('div', {
+                class: 't-release-date ' + ((isWaiting) ? 'is-waiting' : 'is-available'),
+                textContent: isWaiting
+                    ? 'Осталось дней: ' + productModel.getWaitingForReleaseDays()
+                    : 'Уже в продаже дней: ' +  productModel.getAvailableForReleaseDays()
+            });
+
+            elToAppend.append(releaseDateDiv);
+        }
+    }
+
+    this.openEditTitleWindow = function(productModel, button, itemElement) {
+        (new tEditWindow(
+            productModel, button, itemElement
+        ))
+            .setSubmitFunction(function (tEditWindow, productModel, editInput) {
+                productModel.setTitle(editInput.value);
+                productModel.save();
+            })
+            .setKeyUpFunc(function (targetInput, sumbitButton) {
+                sumbitButton.disabled = !targetInput.value;
+            })
+            .setEditInputValue(productModel.getTitle())
+            .setEditInputLength(100)
+            .initEditWindow();
     };
-    this.openEditCheckPriceWindow = function(el, productId) {
-        this.closeEditWindow();
-        document.querySelector('body').append(this.getWindowShadow());
-        document.querySelector('body').append(this.openCheckPriceWindow(productId, this, el));
+    this.openEditCheckPriceWindow = function(productModel, button, itemElement) {
+        (new tEditWindow(
+            productModel, button, itemElement
+        ))
+            .setSubmitFunction(function (tEditWindow, productModel, editInput) {
+                productModel.setListenPriceValue(editInput.value);
+                productModel.save();
+
+                // buttonElement.classList.remove('t-check-price-available');
+            })
+            .setResetFunction(function (tEditWindow, productModel) {
+                productModel.setListenPriceValue(null);
+                productModel.save();
+            })
+            .setKeyUpFunc(function (targetInput, sumbitButton) {
+                targetInput.value = targetInput.value.replace(/[^0-9\.]/g, '');
+                sumbitButton.disabled = !targetInput.value;
+            })
+            .setProductInfoTitle('Set CheckPrice for: ')
+            .setResetButtonTitle('Reset CheckPrice')
+            .setEditInputValue(productModel.getListenPriceValue())
+            .setEditInputLength(5)
+            .initEditWindow();
     };
+    this.openEditReleaseDateWindow = function(productModel, button, itemElement) {
+        (new tEditWindow(
+            productModel, button, itemElement
+        ))
+            .setSubmitFunction(function (tEditWindow, productModel, editInput) {
+                productModel.setReleaseDate(editInput.value);
+                productModel.save();
+                tEditWindow.tHtml.appendReleaseDate(itemElement, productModel);
+            })
+            .setResetFunction(function (tEditWindow, productModel) {
+                productModel.setReleaseDate(null);
+                productModel.save();
+                tEditWindow.tHtml.appendReleaseDate(itemElement, productModel);
+            })
+            .setKeyUpFunc(function (targetInput, sumbitButton) {
+                targetInput.value = targetInput.value.replace(/[^0-9\.]/g, '');
+                sumbitButton.disabled = !tProduct.isStringDateMatch(targetInput.value);
+            })
+            .setProductInfoTitle('Set Release Date for: ')
+            .setResetButtonTitle('Reset Release Date')
+            .setEditInputValue(
+                productModel.getReleaseDate()
+                ? tProduct.convertDateToString(productModel.getReleaseDate())
+                : null
+            )
+            .setEditInputLength(10)
+            .initEditWindow();
+    };
+
 }
