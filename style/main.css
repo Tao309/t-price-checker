@@ -1,0 +1,172 @@
+/** Основные стили BEGIN */
+.t-head-result,
+.t-basket-head,
+.t-window-shadow,
+.t-list-item,
+.t-old-price,
+.t-button {font-family: sans-serif;}
+/** Основные стили END */
+
+.t-button {border: 0;background: none;}
+.t-button:hover {cursor:pointer;}
+
+.t-button.t-button-submit {}
+
+.t-basket-head {position:relative;}
+
+.t-window-shadow {z-index: 100; background:rgba(0,0,0,0.8); position:fixed; left:0; top: 0; width: 100%; height: 100%;}
+.t-window-edit {z-index: 110; position:fixed; left:50%; top:35%; width:440px; margin-left: -220px;}
+.t-window-edit .t-window-body {padding: 20px; border-radius: 10px; background: #fff;}
+.t-window-edit .t-window-body input[type=text] {border: 1px solid #d1d1d1; width:300px; padding: 2px 6px;}
+.t-window-edit .t-window-body button[type=submit] {margin-left: 10px;}
+.t-window-edit .t-window-body .t-window-info {color: #626262; padding: 0 0 10px 4px;}
+
+.t-old-price-actions {}
+.t-old-price-actions > button {margin-right: 14px; display: inline-block;}
+
+.t-old-price .t-title-edit {transform: rotate(90deg);}
+.t-old-price .t-title-edit:before {content:'✎'; color: orange;}
+
+.t-old-price .t-check-price {}
+.t-old-price .t-check-price:before {content:'⚠'; color: #dadada; font-size: 1.4em;}
+.t-old-price .t-check-price.t-check-price-available:before {color: #08d106;}
+
+.t-old-price .remove-from-storage-button {display:none; position:absolute; font-size: 18px; font-weight:bold; color:red; right: 10px; margin: 0;}
+.t-old-price .remove-from-storage-button:before {content: '✖';}
+.t-old-price:hover .remove-from-storage-button {display:inline-block;}
+
+.t-old-price .set-release-date-button {transform: rotate(90deg);}
+.t-old-price .set-release-date-button::before {content:'✎'; color: dodgerblue;}
+
+.t-list-item {position: relative; margin: 4px 0;}
+.t-list-item::before {content:''; width: 4px; height: 100%; position: absolute; left: -8px; top: 0;background-color: #028502;opacity: 0.7;}
+.t-list-item.t-limit-count-5::before {background-color: #e50303;}
+.t-list-item.t-limit-count-10::before {background-color: #e53803;}
+.t-list-item.t-limit-count-20::before {background-color: #e56103;}
+.t-list-item.t-limit-count-50::before {background-color: #008062;}
+
+.t-list-item-not-available .t-old-price {position: relative;}
+.t-list-item-not-available .t-item-qty {padding-left: 20px;}
+
+.t-price-arrow {font-size: 18px; font-weight:bold;}
+.t-price-arrow.not-changed {color: #0395c1;}
+.t-price-arrow.not-changed:before {content: '✓';}
+.t-price-arrow.up {color: red;}
+.t-price-arrow.up:before {content: '↑';}
+.t-price-arrow.down {color: green;}
+.t-price-arrow.down:before {content: '↓';}
+.t-price-arrow.up:before, .t-price-arrow.down:before {padding-right: 4px;}
+.t-old-price-percent {width:130px;position:relative;}
+.t-price-percent {font-size:14px;padding-left: 5px;color:#707070;}
+
+.t-old-price {position: absolute; top:0; cursor:default; text-align:left; width: 140px; height: 95px; padding-left: 10px;}
+.t-old-price > span {display:block;text-align:left;}
+.t-old-price > .unavailable-info {margin-bottom: 4px; width: 140px;font-size: 12px;color: #a92424;}
+.t-old-price > .t-price-old-date {font-size: 10px; margin-bottom: 4px;}
+.t-new-min-price {position: absolute; left:30px; top:30px; color: #4fc78a;}
+.t-old-price .t-hover-field {z-index:5; position:absolute; left: -158px; top: 20px; width: 160px; display:none;}
+.t-old-price:hover .t-hover-field {display:block;}
+.t-old-price .t-hover-field > div {border: 1px solid #d9cfcf;border-top:0;}
+.t-old-price .t-hover-field > div:first-child {border-top: 1px solid #d9cfcf;}
+.t-same-products,
+.t-price-dates {cursor:default; z-index: 10; font-size: 14px; background: #fff; text-align: left; padding: 8px 12px; }
+.t-price-dates {}
+.t-price-dates .t-price-date {margin:2px 0;}
+.t-old-price .t-price-dates-icon,
+.t-old-price .t-price-same-products-icon {margin-top: 4px;}
+.t-old-price .t-price-dates-icon:before {content:'◎';color:#e78d1e;}
+.t-old-price .t-price-same-products-icon:before {content:'◎';color:#b204b5;}
+
+.t-same-products {}
+.t-same-products .t-same-product {margin:2px 0;}
+.t-same-products .t-same-product a {color: #242424;}
+.t-same-products .t-same-product a:after {padding-left: 4px;}
+.t-same-products .t-same-product a.up {color:red;}
+.t-same-products .t-same-product a.down {color:green;}
+.t-same-products .t-same-product a.up:after {content: '↑';}
+.t-same-products .t-same-product a.down:after {content: '↓';}
+.t-same-products .t-same-product a:hover {color: #0395c1;}
+
+.t-release-date {color: #fbfbfb; padding: 6px 10px; border-radius: 6px; z-index: 4;}
+.t-list-item > .t-release-date {position: absolute; left: 110px; top: 105px;}
+.t-item-title-column > .t-release-date {display: inline-block; margin-top: 8px;}
+.t-release-date.is-waiting {background: #0e7ab9; opacity: 0.6;}
+.t-release-date.is-available {background: #0eb972;}
+
+.t-head-result {font-size: 16px; border: 1px solid #edf3f7; padding: 4px; z-index: 5; background: #fff; position: fixed; left: 0; top: 136px;
+    width: 220px;
+    border-radius: 8px;
+}
+.t-head-result > div {margin:8px 0;}
+.t-changed-result {color: #707783; padding-left: 4px; margin-right: 4px;}
+.t-changed-result.min-price {color: #4fc78a; margin-left:8px;}
+.t-changed-result.price-up {color: red; font-weight: bold;}
+.t-changed-result.price-up:before {content:'↑';}
+.t-changed-result.price-down {color: green; font-weight: bold;}
+.t-changed-result.price-down:before {content:'↓';}
+.t-changed-result.price-up:before,
+.t-changed-result.price-down:before {padding-right: 6px;}
+.t-changed-result.check-price {color: #08d106;}
+.t-changed-result.products-count {color: #c2c2c2;}
+.t-changed-result.products-count {margin: 0; color: #727272; font-size: 0.9rem; font-weight: normal;}
+.t-changed-result.products-count > p {margin: 0;}
+.t-changed-result > label:hover {cursor: pointer;}
+
+.t-product-not-found {font-size: 24px; color:#f97d12;}
+
+.t-position-relative {position: relative;}
+.t-item-qty {margin:8px 0 0 10px; width: 120px; position: relative; cursor: default;}
+.t-item-qty .t-item-current-qty {color: #af07af; }
+.t-item-qty .t-item-max-qty-date {color: #707070; font-size: 0.7rem; margin-top: 2px;}
+.t-item-qty .t-item-stocks {
+    display: none;
+    position: absolute;
+    left: 130px; top: -8px;
+    width: 140px;
+    padding: 6px 8px;
+    border: 1px solid #707070;
+    background: #fff;
+    z-index: 1;
+    color: #707070;
+    font-size: 0.9rem;
+    border-radius: 2px;
+}
+.t-item-qty:hover .t-item-stocks {display: block;}
+.t-item-qty .t-item-stock-row {}
+.t-item-qty .t-item-stock-qty-row {}
+
+.t-sort-button {font-size: 16px; color: #707783; margin: 0 2px; border: 1px solid #edf3f7; border-radius: 4px; background: white; padding: 4px; line-height: normal;}
+.t-sort-button:hover {cursor: pointer; background: #828997; color: #edf3f7;}
+.t-sort-button.up,.t-sort-button.down {background: #707783; color: #edf3f7;}
+.t-sort-button:before {padding-right: 6px;}
+.t-sort-button.up {}
+.t-sort-button.up:before {content: '↑';}
+.t-sort-button.down {}
+.t-sort-button.down:before {content: '↓'; }
+.t-sort-button.t-sort-qty {}
+.t-sort-button.t-sort-price {}
+
+.t-head-search {
+    border: 1px solid #edf3f7;
+    border-radius: 4px;
+    width: 200px;
+    position: relative;
+    overflow: hidden;
+    padding: 4px 0;
+}
+.t-head-search .search-input {
+    border: none;
+    width: 178px;
+    display: inline-block;
+    padding: 2px 8px;
+}
+.t-head-search .search-reset {
+    color: #707783;
+    width: 29px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    border: 0;
+    height: 100%;
+}
+.t-head-search .search-reset:hover {color: #edf3f7;background: #707783;cursor:pointer;}

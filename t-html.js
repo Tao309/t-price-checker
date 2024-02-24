@@ -38,7 +38,9 @@ function tHtml(type, tPriceChecker) {
         if (isExists(data.title)) {el.title = data.title;}
         if (isExists(data.disabled)) {el.disabled = data.disabled;}
 
-        if (isExists(attr.maxlength)) {el.setAttribute('maxlength', attr.maxlength);}
+        Object.keys(attr).forEach(key => {
+            el.setAttribute(key, attr[key]);
+        });
 
         return el;
     };
@@ -241,10 +243,8 @@ function tHtml(type, tPriceChecker) {
 
         var colorClassName = 'not-changed';
         if (currentPrice > oldMinPrice) {
-            //colorClassName = 'up';
             this.tEventListener.whenFoundPriceUp(productModel, itemElement, this.tPriceChecker);
         } else if(currentPrice < oldMinPrice) {
-            //colorClassName = 'down';
             this.tEventListener.whenFoundPriceDown(productModel, itemElement, this.tPriceChecker);
         } else {
             this.tEventListener.whenPriceIsNotChanged(productModel, itemElement, this.tPriceChecker);
@@ -258,11 +258,11 @@ function tHtml(type, tPriceChecker) {
             oldMinPrice = '';
         }
 
-        // сравнение с предыдущей ценой из истории
+        // Сравнение с предыдущей ценой из истории
         var oldPriceForElement = oldMinPrice;
 
-        var div = document.createElement("div");
-        div.className = this.tPriceChecker.selectors.oldPrice;
+        // Главный элемент для всего.
+        var div = this.createElement('div', {className: this.tPriceChecker.selectors.oldPrice});
 
         if (!productModel.isAvailable() && productModel.getNotAvailableDateFrom()) {
             var divNotAvailableInfo = document.createElement("span");
@@ -271,13 +271,14 @@ function tHtml(type, tPriceChecker) {
             div.append(divNotAvailableInfo);
         }
 
-        var oldPricePercentDiv = document.createElement("div");
-        oldPricePercentDiv.className = this.tPriceChecker.selectors.oldPricePercent;
+        // Последняя цена (галочка, стрелка, цена, процент) BEGIN
+        var oldPricePercentDiv = this.createElement('div', {className: this.tPriceChecker.selectors.oldPricePercent});
 
-        var span = document.createElement("span");
-        span.className = 't-price-arrow '+colorClassName;
-        span.textContent = oldPriceForElement;
-        span.setAttribute('data-price', currentPrice);
+        var span = this.createElement(
+            'span',
+            {className: 't-price-arrow ' + colorClassName, textContent: oldPriceForElement},
+            {'data-price': currentPrice}
+        );
         oldPricePercentDiv.append(span);
 
         var percentText;
@@ -293,39 +294,55 @@ function tHtml(type, tPriceChecker) {
             spanPercent.textContent = percentText;
             oldPricePercentDiv.append(spanPercent);
         }
+        // Последняя цена END
 
+        // Дата последней низкой цены.
         if (productModel.getLastDate()) {
-            var spanDate = document.createElement("span");
-            spanDate.className = 't-price-old-date';
-            spanDate.textContent = tProduct.convertDateToString(productModel.getLastDate());
+            var spanDate = this.createElement('span', {
+                className: 't-price-old-date',
+                textContent: tProduct.convertDateToString(productModel.getLastDate())
+            });
             div.append(spanDate);
         }
 
-        var spanEdit = document.createElement("button");
-        spanEdit.className = 't-title-edit t-button';
-        spanEdit.setAttribute('title', 'Edit title');
+        // Кнопки действий BEGIN
+        var actionsDiv = this.createElement('div', {className: 't-old-price-actions'})
+
+        // Редактировать название продукта.
+        var spanEdit = this.createElement('button', {className: 't-title-edit t-button'}, {title: 'Edit title'});
         spanEdit.addEventListener("click", function (event) {
             event.preventDefault();
             self.openEditTitleWindow(productModel, event.target, itemElement);
         });
-        oldPricePercentDiv.append(spanEdit);
+        actionsDiv.append(spanEdit);
 
+        // Редактировать отслеживание цены.
         var tCheckPriceClassNames = 't-check-price t-button';
         if (checkPrice && checkPrice >= currentPrice && productModel.isAvailable()) {
             tCheckPriceClassNames += ' t-check-price-available';
-            this.checkPriceCount++;
+            this.tPriceChecker.checkPriceCount++;
             self.tEventListener.whenFoundPriceCheck(productModel, itemElement);
         }
 
-        var spanCheckPrice = document.createElement("button");
-        spanCheckPrice.className = tCheckPriceClassNames;
-        spanCheckPrice.setAttribute('title', 'Set Check Price');
+        var spanCheckPrice = this.createElement('button', {className: tCheckPriceClassNames}, {title: 'Set Check Price'});
         spanCheckPrice.addEventListener("click", function (event) {
             event.preventDefault();
             self.openEditCheckPriceWindow(productModel, event.target, itemElement);
         });
-        oldPricePercentDiv.append(spanCheckPrice);
+        actionsDiv.append(spanCheckPrice);
 
+        // Установка даты релиза
+        var releaseDateButton = self.createElement('button', {
+            title: 'Set Release Date',
+            class: 'set-release-date-button t-button'
+        });
+        releaseDateButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            self.openEditReleaseDateWindow(productModel, event.target, itemElement);
+        });
+        actionsDiv.append(releaseDateButton);
+
+        // Удаление товара.
         var removeButton = self.createElement('button', {
             title: 'Remove from storage',
             class: 'remove-from-storage-button t-button'
@@ -337,20 +354,11 @@ function tHtml(type, tPriceChecker) {
 
             self.tEventListener.whenRemoveFromStorage(element);
         });
-        oldPricePercentDiv.append(removeButton);
-
-        var releaseDateButton = self.createElement('button', {
-            title: 'Set Release Date',
-            class: 'set-release-date-button t-button'
-        });
-        releaseDateButton.addEventListener('click', function(event) {
-            event.preventDefault();
-
-            self.openEditReleaseDateWindow(productModel, event.target, itemElement);
-        });
-        oldPricePercentDiv.append(releaseDateButton);
+        actionsDiv.append(removeButton);
+        // Кнопки действий END
 
         div.append(oldPricePercentDiv);
+        div.append(actionsDiv);
 
         this.appendHoverElements(div, productModel);
 
@@ -378,21 +386,20 @@ function tHtml(type, tPriceChecker) {
 
     this.appendPriceDates = function(hoverField, productModel, parentEl) {
         if(!productModel.getPriceDateForViewCount()) {return;}
+        var self = this;
 
-        var divDates = document.createElement("div");
-        divDates.className = 't-price-dates';
+        var divDates = this.createElement('div', {className: 't-price-dates'});
 
         productModel.getPriceDatesForView().forEach(function(priceDate) {
-            var priceDateDiv = document.createElement("div");
-            priceDateDiv.className = 't-price-date';
-            priceDateDiv.textContent = tProduct.convertDateToString(priceDate.date) + ': ' + priceDate.price;
-
-            divDates.appendChild(priceDateDiv);
+            divDates.appendChild(
+                self.createElement('div', {
+                    className: 't-price-date',
+                    textContent: tProduct.convertDateToString(priceDate.date) + ': ' + priceDate.price
+                })
+            );
         });
 
-        var dateIconSpan = document.createElement("span");
-        dateIconSpan.className = 't-price-dates-icon';
-        parentEl.append(dateIconSpan);
+        parentEl.append(this.createElement('span', {className: 't-price-dates-icon'}));
 
         hoverField.append(divDates);
     };
@@ -402,9 +409,7 @@ function tHtml(type, tPriceChecker) {
         if (!foundProducts.length) {return;}
         var el = this.getSameProducts(foundProducts, productModel);
 
-        var dateIconSpan = document.createElement("span");
-        dateIconSpan.className = 't-price-same-products-icon';
-        parentEl.append(dateIconSpan);
+        parentEl.append(this.createElement('span', {className: 't-price-same-products-icon'}));
 
         hoverField.append(el);
     };
