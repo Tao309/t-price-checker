@@ -5,7 +5,9 @@
 .t-old-price,
 .t-button {font-family: sans-serif;}
 
-.t-button {border: 0;background: none;}
+.t-button-icon,
+.t-button {border: 0;padding: 0;background: none;}
+.t-button-icon,
 .t-button:hover {cursor:pointer;}
 /** Основные стили END */
 

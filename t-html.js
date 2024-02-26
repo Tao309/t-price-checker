@@ -276,7 +276,7 @@ function tHtml(type, tPriceChecker) {
 
         var span = this.createElement(
             'span',
-            {className: 't-price-arrow ' + colorClassName, textContent: oldPriceForElement},
+            {className: 't-price-arrow t-button-icon ' + colorClassName, textContent: oldPriceForElement},
             {'data-price': currentPrice}
         );
         oldPricePercentDiv.append(span);
@@ -310,7 +310,7 @@ function tHtml(type, tPriceChecker) {
         var actionsDiv = this.createElement('div', {className: 't-old-price-actions'})
 
         // Редактировать название продукта.
-        var spanEdit = this.createElement('button', {className: 't-title-edit t-button'}, {title: 'Edit title'});
+        var spanEdit = this.createElement('button', {className: 't-title-edit t-button-icon'}, {title: 'Edit title'});
         spanEdit.addEventListener("click", function (event) {
             event.preventDefault();
             self.openEditTitleWindow(productModel, event.target, itemElement);
@@ -318,7 +318,7 @@ function tHtml(type, tPriceChecker) {
         actionsDiv.append(spanEdit);
 
         // Редактировать отслеживание цены.
-        var tCheckPriceClassNames = 't-check-price t-button';
+        var tCheckPriceClassNames = 't-check-price t-button-icon';
         if (checkPrice && checkPrice >= currentPrice && productModel.isAvailable()) {
             tCheckPriceClassNames += ' t-check-price-available';
             this.tPriceChecker.checkPriceCount++;
@@ -335,7 +335,7 @@ function tHtml(type, tPriceChecker) {
         // Установка даты релиза
         var releaseDateButton = self.createElement('button', {
             title: 'Set Release Date',
-            class: 'set-release-date-button t-button'
+            class: 'set-release-date-button t-button-icon'
         });
         releaseDateButton.addEventListener('click', function(event) {
             event.preventDefault();
@@ -346,7 +346,7 @@ function tHtml(type, tPriceChecker) {
         // Удаление товара.
         var removeButton = self.createElement('button', {
             title: 'Remove from storage',
-            class: 'remove-from-storage-button t-button'
+            class: 'remove-from-storage-button t-button-icon'
         });
         removeButton.addEventListener('click', function(event) {
             event.preventDefault();
