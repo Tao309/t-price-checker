@@ -648,7 +648,7 @@ function tPriceChecker() {
         GM_cookie.list({ name: this.cookieSearchValue }, function(cookies, error) {
             if (!error) {
                 //console.log(cookies);
-                if (typeof cookies[0].value !== 'undefined' && cookies[0].value) {
+                if (isExists(cookies[0]) && isExists(cookies[0].value) && cookies[0].value) {
                     inputSearch.value = cookies[0].value;
                     self.searchProductsByTitle(inputSearch.value);
                 }
