@@ -75,11 +75,7 @@ function tHtml(type, tPriceChecker) {
         });
 
         var textContent;
-        if (!currentQty) {
-            if (productModel.getLastStockQty()) {
-                textContent = 'Было: ' + productModel.getLastStockQty();
-            }
-        } else {
+        if (currentQty) {
             textContent = currentQty;
             textContent += ' / ' + productModel.getLastStockQty();
         }
@@ -88,13 +84,13 @@ function tHtml(type, tPriceChecker) {
 
         itemQtyDiv.append(currentQtyDiv);
 
-        if (productModel.getLastStockDate()) {
-            var dateDiv = this.createElement('div', {
-                textContent: 'Доступно с ' + tProduct.convertDateToString(productModel.getLastStockDate()),
-                className: 't-item-max-qty-date'
-            });
-
-            itemQtyDiv.append(dateDiv);
+        if (productModel.isAvailable() && productModel.getLastStockDate()) {
+            itemQtyDiv.append(
+                this.createElement('div', {
+                    textContent: 'Доступно с ' + tProduct.convertDateToString(productModel.getLastStockDate()),
+                    className: 't-item-max-qty-date'
+                })
+            );
         }
 
         var stocks = productModel.getStocks();
@@ -130,13 +126,6 @@ function tHtml(type, tPriceChecker) {
         className += (type == 'up') ? 'price-up' : 'price-down';
         div.className = className;
         div.textContent = 'цена: '+count;
-
-        return div;
-    };
-    this.getCheckPriceInfo = function(count) {
-        var div = document.createElement('div');
-        div.className = 't-changed-result check-price';
-        div.textContent = 'CheckPrice: '+count;
 
         return div;
     };
@@ -265,10 +254,21 @@ function tHtml(type, tPriceChecker) {
         var div = this.createElement('div', {className: this.tPriceChecker.selectors.oldPrice});
 
         if (!productModel.isAvailable() && productModel.getNotAvailableDateFrom()) {
-            var divNotAvailableInfo = document.createElement("span");
-            divNotAvailableInfo.className = 'unavailable-info';
-            divNotAvailableInfo.textContent = 'Недоступно с ' + tProduct.convertDateToString(productModel.getNotAvailableDateFrom());
-            div.append(divNotAvailableInfo);
+            div.append(
+                this.createElement('span', {
+                    className: 'unavailable-info',
+                    textContent: 'Недоступно с ' + tProduct.convertDateToString(productModel.getNotAvailableDateFrom())
+                })
+            );
+        }
+
+        if (!productModel.isAvailable() && productModel.getLastStockQty()) {
+            div.append(
+                this.createElement('div', {
+                    className: 't-item-current-qty',
+                    textContent: 'Было: ' + productModel.getLastStockQty()
+                })
+            );
         }
 
         // Последняя цена (галочка, стрелка, цена, процент) BEGIN
@@ -297,12 +297,13 @@ function tHtml(type, tPriceChecker) {
         // Последняя цена END
 
         // Дата последней низкой цены.
-        if (productModel.getLastDate()) {
-            var spanDate = this.createElement('span', {
-                className: 't-price-old-date',
-                textContent: tProduct.convertDateToString(productModel.getLastDate())
-            });
-            div.append(spanDate);
+        if (productModel.isAvailable() && productModel.getLastDate()) {
+            div.append(
+                this.createElement('div', {
+                    className: 't-price-old-date',
+                    textContent: tProduct.convertDateToString(productModel.getLastDate())
+                })
+            );
         }
 
         // Кнопки действий BEGIN
@@ -357,7 +358,9 @@ function tHtml(type, tPriceChecker) {
         actionsDiv.append(removeButton);
         // Кнопки действий END
 
-        div.append(oldPricePercentDiv);
+        if (productModel.isAvailable()) {
+            div.append(oldPricePercentDiv);
+        }
         div.append(actionsDiv);
 
         this.appendHoverElements(div, productModel);

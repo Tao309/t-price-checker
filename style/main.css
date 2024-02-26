@@ -2,13 +2,12 @@
 .t-head-result,
 .t-basket-head,
 .t-window-shadow,
-.t-list-item,
 .t-old-price,
 .t-button {font-family: sans-serif;}
-/** Основные стили END */
 
 .t-button {border: 0;background: none;}
 .t-button:hover {cursor:pointer;}
+/** Основные стили END */
 
 .t-button.t-button-submit {}
 
@@ -45,8 +44,8 @@
 .t-list-item.t-limit-count-20::before {background-color: #e56103;}
 .t-list-item.t-limit-count-50::before {background-color: #008062;}
 
-.t-list-item-not-available .t-old-price {position: relative;}
-.t-list-item-not-available .t-item-qty {padding-left: 20px;}
+.t-list-item-not-available .t-old-price {position: relative; height: 50px;}
+.t-list-item-not-available .t-item-qty {margin-left: 20px;}
 
 .t-price-arrow {font-size: 18px; font-weight:bold;}
 .t-price-arrow.not-changed {color: #0395c1;}
@@ -56,15 +55,15 @@
 .t-price-arrow.down {color: green;}
 .t-price-arrow.down:before {content: '↓';}
 .t-price-arrow.up:before, .t-price-arrow.down:before {padding-right: 4px;}
-.t-old-price-percent {width:130px;position:relative;}
+.t-old-price-percent {width:130px; position:relative; padding-left: 5px;}
 .t-price-percent {font-size:14px;padding-left: 5px;color:#707070;}
 
 .t-old-price {position: absolute; top:0; cursor:default; text-align:left; width: 140px; height: 95px; padding-left: 10px;}
 .t-old-price > span {display:block;text-align:left;}
 .t-old-price > .unavailable-info {margin-bottom: 4px; width: 140px;font-size: 12px;color: #a92424;}
-.t-old-price > .t-price-old-date {font-size: 10px; margin-bottom: 4px;}
+.t-old-price .t-price-old-date {font-size: 0.7rem; margin: 2px 0; color: #686868;}
 .t-new-min-price {position: absolute; left:30px; top:30px; color: #4fc78a;}
-.t-old-price .t-hover-field {z-index:5; position:absolute; left: -158px; top: 20px; width: 160px; display:none;}
+.t-old-price .t-hover-field {z-index:5; position:absolute; left: -158px; top: 6px; width: 160px; display:none;}
 .t-old-price:hover .t-hover-field {display:block;}
 .t-old-price .t-hover-field > div {border: 1px solid #d9cfcf;border-top:0;}
 .t-old-price .t-hover-field > div:first-child {border-top: 1px solid #d9cfcf;}
@@ -73,7 +72,7 @@
 .t-price-dates {}
 .t-price-dates .t-price-date {margin:2px 0;}
 .t-old-price .t-price-dates-icon,
-.t-old-price .t-price-same-products-icon {margin-top: 4px;}
+.t-old-price .t-price-same-products-icon {}
 .t-old-price .t-price-dates-icon:before {content:'◎';color:#e78d1e;}
 .t-old-price .t-price-same-products-icon:before {content:'◎';color:#b204b5;}
 
@@ -116,6 +115,7 @@
 
 .t-position-relative {position: relative;}
 .t-item-qty {margin:8px 0 0 10px; width: 120px; position: relative; cursor: default;}
+.t-old-price .t-item-current-qty,
 .t-item-qty .t-item-current-qty {color: #af07af; }
 .t-item-qty .t-item-max-qty-date {color: #707070; font-size: 0.7rem; margin-top: 2px;}
 .t-item-qty .t-item-stocks {

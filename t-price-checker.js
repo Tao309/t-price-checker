@@ -34,6 +34,8 @@ function tPriceChecker() {
         this.priceDownChanged = 0;
         this.checkPriceCount = 0;
         this.checkReturnsCount = 0;
+        this.isAvailableForReleaseDate = 0;
+        this.isWaitingForReleaseDate = 0;
         this.productsCount = 0;
         this.qtyLimit = {
             '5': 0,
@@ -537,9 +539,9 @@ function tPriceChecker() {
             isNotAvailable = true;
         }
 
-        if (currentPrice) {
+        if (!isNotAvailable) {
             self.afterSuccessInitOneProduct(productId, item, currentPrice, title, itemStockQty);
-        } else if (isNotAvailable) {
+        } else {
             self.afterNotAvailableInitOneProduct(productId, item);
         }
     };
@@ -606,8 +608,7 @@ function tPriceChecker() {
             return;
         }
 
-        var qtyEl = itemElement.querySelector('.'+this.selectors.itemQuantity);
-        qtyEl.appendChild(this.tHtml.getQtyElement(productModel));
+        itemElement.querySelector('.'+this.selectors.itemQuantity).appendChild(this.tHtml.getQtyElement(productModel));
     };
     this.appendNotAvailableMaxQty = function(productModel, item) {
         item.querySelector('.' + this.selectors.itemPrice).appendChild(this.tHtml.getQtyElement(productModel));
@@ -637,12 +638,13 @@ function tPriceChecker() {
 
         var divSearch = document.createElement('div');
         divSearch.className = 't-head-search';
-        var inputSearch = document.createElement('input');
-        inputSearch.type = 'text';
-        inputSearch.placeholder = 'Поиск товара';
-        inputSearch.className = 'search-input';
-        inputSearch.id = 'search-input';
+        var inputSearch = this.tHtml.createElement('input', {
+            type: 'text',
+            placeholder: 'Поиск товара',
+            className: 'search-input'
+        });
         divSearch.appendChild(inputSearch);
+
         var inputSearcReset = document.createElement('input');
         inputSearcReset.type = 'button';
         inputSearcReset.className = 'search-reset';

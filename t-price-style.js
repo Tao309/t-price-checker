@@ -11,17 +11,24 @@ function tPriceStyle(initType) {
                 this.appendCssStyles(`<style>
                     .t-head-result {left: 800px; position: absolute; top: -45px;}
                     .t-old-price {position: relative; top: 5px; padding-left: 0;}
+                    .t-old-price .remove-from-storage-button {right: -10px;}
                     .t-list-item > td {padding: 22px 0 14px 0!important;}
                     .t-list-item > td.basket-items-list-item-price {padding: 22px 0 14px 20px!important;}
-                    .t-changed-result.products-count p {line-height: 1.4rem;}                    
+                    .t-changed-result.products-count p {line-height: 1.4rem;}                  
                 </style>`);
                 break;
             case TYPE_OZON:
                 this.appendCssStyles(`<style>
                     .t-list-item {margin: 2px 0;}
-                    .t-old-price {position: relative; left: -40px; top: 10px;}
+                    .t-old-price {position: relative; left: -8px; top: 10px;}
                     .t-head-result {}
-                    .t-item-qty {margin-left: 35px;}
+                    .t-item-qty {margin-left: 6px;}
+                    .t-old-price .remove-from-storage-button {right: 30px;}
+                    .t-old-price-actions > button {margin-right: 0;}
+                    .t-old-price-percent {padding-left: 6px;}
+                    .t-old-price .t-price-dates-icon, 
+                    .t-old-price .t-price-same-products-icon {padding-left: 6px;}
+                    .t-old-price .t-price-old-date {padding-left: 4px;}
                 </style>`);
                 break;
             case TYPE_WILDBERRIES:
@@ -29,12 +36,15 @@ function tPriceStyle(initType) {
                    .t-list-item {margin: 4px 0;}
                    .t-head-result {}
                    .t-item-qty {margin-left: 8px;}
+                   .t-list-item-not-available .t-item-qty {margin-left: 10px;}
+                   .t-old-price .remove-from-storage-button {right: 28px;}
                 </style>`);
                 break;
             case TYPE_CHITAI_GOROD:
                 this.appendCssStyles(`<style>
                    .t-head-result {left: 16px; top: 210px;}
                    .t-old-price {position: relative; left: 40px; top:4px;}
+                   .t-old-price .remove-from-storage-button {right: -5px;}
 
                    .cart-item__content-right .cart-item__actions {right: -50px!important; top:125px!important;}
                    .product-price__value--discount {color: #424242!important;}

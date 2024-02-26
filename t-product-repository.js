@@ -44,6 +44,7 @@ function tProductRepository(type) {
                 || (isCurrentQtyMoreThanLastStock && diffDays && isStockDaysLimitPassed)
                 // Погрешность, если старое вернулось в сток более чем на 5 позиций
                 || isStockMoreThanLimitChanged
+                || !product.getLastStock()
             ) {
                 product.appendNewStock(itemStockQty);
                 requireToSave = true;
