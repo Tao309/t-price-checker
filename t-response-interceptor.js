@@ -345,6 +345,8 @@ function tResponseInterceptor(type, tPriceChecker) {
 
     var origOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(method, url) {
+      // autocomplete.diginetica.net
+
       this.addEventListener('load', function() {
         var r = this;
         //console.log('xhr url: ', url);
@@ -353,7 +355,7 @@ function tResponseInterceptor(type, tPriceChecker) {
         } catch(e) {
           self.requestPathName = url;
         }
-        console.log('requestPathName: ', self.requestPathName, self.currentPathName);
+        //console.log('requestPathName: ', self.requestPathName, self.currentPathName);
 
         if (self.isBasketPage()) {
           //console.log(r.responseTextr);
@@ -376,6 +378,7 @@ function tResponseInterceptor(type, tPriceChecker) {
           }, 1);
         }
       });
+
       origOpen.apply(this, arguments);
     };
   };
