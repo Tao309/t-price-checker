@@ -29,6 +29,8 @@ function tPriceChecker() {
     this.isAvailableForReleaseDate = 0; // доступен к продаже.
     this.isWaitingForReleaseDate = 0; // ожидается в продаже.
 
+    this.cookieSearchValue = 't-search-value';
+
     this.resetCounts = function() {
         this.priceUpChanged = 0;
         this.priceDownChanged = 0;
@@ -643,6 +645,17 @@ function tPriceChecker() {
             placeholder: 'Поиск товара',
             className: 'search-input'
         });
+        GM_cookie.list({ name: this.cookieSearchValue }, function(cookies, error) {
+            if (!error) {
+                //console.log(cookies);
+                if (typeof cookies[0].value !== 'undefined' && cookies[0].value) {
+                    inputSearch.value = cookies[0].value;
+                    self.searchProductsByTitle(inputSearch.value);
+                }
+            } else {
+                console.error(error);
+            }
+        });
         divSearch.appendChild(inputSearch);
 
         var inputSearcReset = document.createElement('input');
@@ -667,7 +680,7 @@ function tPriceChecker() {
         });
         inputSearcReset.addEventListener("click", function (event, a, b) {
             self.searchProductsByTitle('up');
-            document.querySelector('#search-input').value = '';
+            document.querySelector('.search-input').value = '';
         });
 
         document.querySelector('.'+this.selectors.basketHead).position = 'relative';
@@ -737,14 +750,25 @@ function tPriceChecker() {
         var self = this, items;
 
         if (value.length < 3) {
+            GM.cookie.set({
+                name: this.cookieSearchValue,
+                value: ''
+            });
+
             items = document.querySelectorAll('.'+self.selectors.listItem+'[style="display: none;"],.'+self.selectors.listItemNotAvailable+'[style="display: none;"]');
             items.forEach(function(item) {
                 item.style.display = 'block';
             });
             return;
         }
+
         value = formatProductTitle(value).toLowerCase();
-        //var searchTimeout = null;
+
+        GM.cookie.set({
+            name: this.cookieSearchValue,
+            value: value
+        });
+
         items = document.querySelectorAll('.'+self.selectors.listItem+ ',.'+self.selectors.listItemNotAvailable);
         window.scrollTo(0, 0);
 
