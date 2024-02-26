@@ -37,6 +37,7 @@ function tHtml(type, tPriceChecker) {
         if (isExists(data.title)) {el.title = data.title;}
         if (isExists(data.title)) {el.title = data.title;}
         if (isExists(data.disabled)) {el.disabled = data.disabled;}
+        if (isExists(data.href)) {el.href = data.href;}
 
         Object.keys(attr).forEach(key => {
             el.setAttribute(key, attr[key]);
@@ -57,7 +58,7 @@ function tHtml(type, tPriceChecker) {
             case TYPE_FFAN:
                 return 'https://ffan.ru/catalog/product/'+productId+'/';
             case TYPE_CHITAI_GOROD:
-                return 'https://www.chitai-gorod.ru/product/'+productId;
+                return 'https://www.chitai-gorod.ru/product/-'+productId;
         }
     };
     this.getQtyElement = function(productModel) {
@@ -194,20 +195,36 @@ function tHtml(type, tPriceChecker) {
         return buttonSortTitlePrice;
     };
     this.getSameProduct = function(foundProduct, product) {
-        var productDiv = document.createElement("div");
-        productDiv.className = 't-same-product';
+        var productDiv = this.createElement('div', {className: 't-same-product'});
 
-        var link = document.createElement("a");
-        link.textContent = foundProduct.getType() + ': ' + foundProduct.getCurrentPrice();
-        link.href = this.getShopLinkForProduct(foundProduct);
-        link.setAttribute('target','_blank');
+        var link = this.createElement('a', {
+                textContent: foundProduct.getType() + ': ' + foundProduct.getCurrentPrice(),
+                href: this.getShopLinkForProduct(foundProduct),
+                className: 't-button'
+            },
+            {
+                target: '_blank'
+            });
         if(product.getCurrentPrice() > foundProduct.getCurrentPrice()) {
-            link.className = 'down';
+            link.className = 't-button down';
         } else if(product.getCurrentPrice() < foundProduct.getCurrentPrice()) {
-            link.className = 'up';
+            link.className = 't-button up';
         }
 
+        let removeButton = this.createElement('span', {
+            className: 't-button-icon t-button-type-remove',
+            title: 'Remove ' + foundProduct.getTitle()
+        });
+        removeButton.addEventListener('click', function(event) {
+            event.preventDefault();
+
+            if (tProductLocal.removeById(foundProduct.getId())) {
+                event.target.closest('.t-same-product').remove();
+            }
+        });
+
         productDiv.appendChild(link);
+        productDiv.appendChild(removeButton);
 
         return productDiv;
     };
@@ -346,7 +363,7 @@ function tHtml(type, tPriceChecker) {
         // Удаление товара.
         var removeButton = self.createElement('button', {
             title: 'Remove from storage',
-            class: 'remove-from-storage-button t-button-icon'
+            class: 't-button-type-remove t-button-icon'
         });
         removeButton.addEventListener('click', function(event) {
             event.preventDefault();

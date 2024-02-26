@@ -72,7 +72,7 @@ function tProductRepository(type) {
         GM_listValues().forEach(function(gmId) {
             var productModel = tProductLocal.get(gmId);
 
-            if (!productModel || !productModel.getType() || !productModel.getTitle()) {
+            if (!productModel || !productModel.getType() || !productModel.getTitle() || !productModel.isAvailable()) {
                 return;
             }
 

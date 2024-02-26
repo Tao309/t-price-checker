@@ -24,10 +24,7 @@ function tPriceStyle(initType) {
                     .t-head-result {}
                     .t-item-qty {margin-left: 6px;}
                     .t-old-price .remove-from-storage-button {right: 30px;}
-                    .t-old-price-actions > button {margin-right: 0;}
                     .t-old-price-percent {padding-left: 6px;}
-                    .t-old-price .t-price-dates-icon, 
-                    .t-old-price .t-price-same-products-icon {padding-left: 6px;}
                     .t-old-price .t-price-old-date {padding-left: 4px;}
                 </style>`);
                 break;

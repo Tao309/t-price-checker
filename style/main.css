@@ -7,7 +7,7 @@
 
 .t-button-icon,
 .t-button {border: 0;padding: 0;background: none;}
-.t-button-icon,
+.t-button-icon:hover,
 .t-button:hover {cursor:pointer;}
 /** Основные стили END */
 
@@ -32,14 +32,16 @@
 .t-old-price .t-check-price:before {content:'⚠'; color: #dadada; font-size: 1.4em;}
 .t-old-price .t-check-price.t-check-price-available:before {color: #08d106;}
 
-.t-old-price .remove-from-storage-button {display:none; position:absolute; font-size: 18px; font-weight:bold; color:red; right: 10px; margin: 0;}
-.t-old-price .remove-from-storage-button:before {content: '✖';}
-.t-old-price:hover .remove-from-storage-button {display:inline-block;}
+.t-button-icon.t-button-type-remove {font-size: 1rem;  color: #ec0000; margin: 0;}
+.t-button-icon.t-button-type-remove::before {content: '✖';}
+.t-old-price-actions .t-button-type-remove {display:none; position:absolute; right: 40px; font-weight:bold;}
+.t-old-price:hover .t-old-price-actions .t-button-type-remove {display:inline-block;}
 
 .t-old-price .set-release-date-button {transform: rotate(90deg);}
 .t-old-price .set-release-date-button::before {content:'✎'; color: dodgerblue;}
 
-.t-list-item {position: relative; margin: 4px 0;}
+.t-list-item {position: relative; margin: 4px 0; z-index: 20;}
+.t-list-item:hover {z-index: 30;}
 .t-list-item::before {content:''; width: 4px; height: 100%; position: absolute; left: -8px; top: 0;background-color: #028502;opacity: 0.7;}
 .t-list-item.t-limit-count-5::before {background-color: #e50303;}
 .t-list-item.t-limit-count-10::before {background-color: #e53803;}
@@ -65,7 +67,7 @@
 .t-old-price > .unavailable-info {margin-bottom: 4px; width: 140px;font-size: 12px;color: #a92424;}
 .t-old-price .t-price-old-date {font-size: 0.7rem; margin: 2px 0; color: #686868;}
 .t-new-min-price {position: absolute; left:30px; top:30px; color: #4fc78a;}
-.t-old-price .t-hover-field {z-index:5; position:absolute; left: -158px; top: 6px; width: 160px; display:none;}
+.t-old-price .t-hover-field {z-index:5; position:absolute; left: -168px; top: 6px; width: 170px; display:none;}
 .t-old-price:hover .t-hover-field {display:block;}
 .t-old-price .t-hover-field > div {border: 1px solid #d9cfcf;border-top:0;}
 .t-old-price .t-hover-field > div:first-child {border-top: 1px solid #d9cfcf;}
@@ -79,7 +81,7 @@
 .t-old-price .t-price-same-products-icon:before {content:'◎';color:#b204b5;}
 
 .t-same-products {}
-.t-same-products .t-same-product {margin:2px 0;}
+.t-same-products .t-same-product {margin:4px 0;}
 .t-same-products .t-same-product a {color: #242424;}
 .t-same-products .t-same-product a:after {padding-left: 4px;}
 .t-same-products .t-same-product a.up {color:red;}
@@ -87,6 +89,7 @@
 .t-same-products .t-same-product a.up:after {content: '↑';}
 .t-same-products .t-same-product a.down:after {content: '↓';}
 .t-same-products .t-same-product a:hover {color: #0395c1;}
+.t-same-products .t-same-product .t-button-type-remove {margin-left: 6px;}
 
 .t-release-date {color: #fbfbfb; padding: 6px 10px; border-radius: 6px; z-index: 4;}
 .t-list-item > .t-release-date {position: absolute; left: 110px; top: 105px;}
