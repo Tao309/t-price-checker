@@ -299,6 +299,7 @@ function tPriceChecker() {
             case TYPE_KNIGOFAN:
                 priceColumn = item.querySelector('td.basket-items-list-item-price');
                 qtyColumn = item.querySelector('td.basket-items-list-item-amount');
+                titleColumn = item.querySelector('.basket-item-block-info');
 
                 this.addCustomClassNamesToItems(item, priceColumn, titleColumn, qtyColumn);
                 break;
@@ -339,6 +340,7 @@ function tPriceChecker() {
                 }
 
                 imageColumn = item.children[0].children[0].children[0].children[0].children[0].children[1];
+                titleColumn = item.children[0].children[0].children[0].children[0].children[0].children[2];
 
                 this.addCustomClassNamesToItems(item, priceColumn, titleColumn, qtyColumn, imageColumn);
                 break;
@@ -363,6 +365,7 @@ function tPriceChecker() {
                     return;
                 }
                 qtyColumn = item.querySelector('.cart-item__counter');
+                titleColumn = item.querySelector('.cart-item__content-description');
 
                 this.addCustomClassNamesToItems(item, priceColumn, titleColumn, qtyColumn);
                 break;
