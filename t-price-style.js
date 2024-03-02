@@ -14,7 +14,7 @@ function tPriceStyle(initType) {
                     .t-old-price .remove-from-storage-button {right: -10px;}
                     .t-list-item > td {padding: 22px 0 14px 0!important;}
                     .t-list-item > td.basket-items-list-item-price {padding: 22px 0 14px 20px!important;}
-                    .t-changed-result.products-count p {line-height: 1.4rem;}                  
+                    .t-changed-result.products-count p {line-height: 1.4rem;}            
                 </style>`);
                 break;
             case TYPE_OZON:
@@ -25,7 +25,8 @@ function tPriceStyle(initType) {
                     .t-item-qty {margin-left: 6px;}
                     .t-old-price .remove-from-storage-button {right: 30px;}
                     .t-old-price-percent {padding-left: 6px;}
-                    .t-old-price .t-price-old-date {padding-left: 4px;}
+                    .t-old-price .t-price-old-date {padding-left: 4px;}      
+                    .t-old-price-actions .t-button-type-remove {right: 40px;}
                 </style>`);
                 break;
             case TYPE_WILDBERRIES:
@@ -42,6 +43,7 @@ function tPriceStyle(initType) {
                    .t-head-result {left: 16px; top: 210px;}
                    .t-old-price {position: relative; left: 40px; top:4px;}
                    .t-old-price .remove-from-storage-button {right: -5px;}
+                   .t-old-price-actions .t-button-type-remove {right: 32px;}
 
                    .cart-item__content-right .cart-item__actions {right: -50px!important; top:125px!important;}
                    .product-price__value--discount {color: #424242!important;}

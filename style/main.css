@@ -3,7 +3,7 @@
 .t-basket-head,
 .t-window-shadow,
 .t-old-price,
-.t-button {font-family: sans-serif;}
+.t-button {font-family: sans-serif; font-size: 12px;}
 
 .t-button-icon,
 .t-button {border: 0;padding: 0;background: none;}
@@ -34,7 +34,7 @@
 
 .t-button-icon.t-button-type-remove {font-size: 1rem;  color: #ec0000; margin: 0;}
 .t-button-icon.t-button-type-remove::before {content: '✖';}
-.t-old-price-actions .t-button-type-remove {display:none; position:absolute; right: 40px; font-weight:bold;}
+.t-old-price-actions .t-button-type-remove {display:none; position:absolute; right: 34px; font-weight:bold;}
 .t-old-price:hover .t-old-price-actions .t-button-type-remove {display:inline-block;}
 
 .t-old-price .set-release-date-button {transform: rotate(90deg);}
@@ -76,13 +76,13 @@
 .t-price-dates {}
 .t-price-dates .t-price-date {margin:2px 0;}
 .t-old-price .t-price-dates-icon,
-.t-old-price .t-price-same-products-icon {}
+.t-old-price .t-price-same-products-icon {font-size: 15px;}
 .t-old-price .t-price-dates-icon:before {content:'◎';color:#e78d1e;}
 .t-old-price .t-price-same-products-icon:before {content:'◎';color:#b204b5;}
 
 .t-same-products {}
 .t-same-products .t-same-product {margin:4px 0;}
-.t-same-products .t-same-product a {color: #242424;}
+.t-same-products .t-same-product a {color: #242424; font-size: 14px;}
 .t-same-products .t-same-product a:after {padding-left: 4px;}
 .t-same-products .t-same-product a.up {color:red;}
 .t-same-products .t-same-product a.down {color:green;}
@@ -91,7 +91,7 @@
 .t-same-products .t-same-product a:hover {color: #0395c1;}
 .t-same-products .t-same-product .t-button-type-remove {margin-left: 6px;}
 
-.t-release-date {color: #fbfbfb; padding: 6px 10px; border-radius: 6px; z-index: 4;}
+.t-release-date {color: #fbfbfb; padding: 6px 10px; border-radius: 6px; z-index: 4;cursor: default;}
 .t-list-item > .t-release-date {position: absolute; left: 110px; top: 105px;}
 .t-item-title-column > .t-release-date {display: inline-block; margin-top: 8px;}
 .t-release-date.is-waiting {background: #0e7ab9; opacity: 0.6;}

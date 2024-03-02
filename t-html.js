@@ -405,7 +405,8 @@ function tHtml(type, tPriceChecker) {
     };
 
     this.appendPriceDates = function(hoverField, productModel, parentEl) {
-        if(!productModel.getPriceDateForViewCount()) {return;}
+        if(!productModel.getPriceDateForViewCount() && productModel.isAvailable()) {return;}
+
         var self = this;
 
         var divDates = this.createElement('div', {className: 't-price-dates'});
