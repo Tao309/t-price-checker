@@ -47,6 +47,7 @@ function tEventListener(type) {
     // Когда найдено, что цена не повысилась
     this.whenPriceIsNotUp = function (productModel, item, tPriceChecker) {
         if (!productModel.isAvailable()) {return;}
+        if (productModel.getCurrentPrice() <= productModel.getPrevLastPrice()) {return;}
 
         if (tProduct.getDiffDateDays(productModel.getPrevLastDate(), new Date()) > 1) {
             return;

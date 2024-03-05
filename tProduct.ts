@@ -184,8 +184,12 @@ abstract class tProduct {
 
     // Получаем пред последний блок цены, который была ранее текущей, т.к. текущая это последняя цена
     getPrevLastPriceDate(): PriceDate|null {
-        if (!this.getData(tProduct.PARAM_PRICE_DATES) || this.getData(tProduct.PARAM_PRICE_DATES).length < 2) {
+        if (!this.getData(tProduct.PARAM_PRICE_DATES)) {
             return null;
+        }
+
+        if (this.getData(tProduct.PARAM_PRICE_DATES).length === 1) {
+            return this.getLastPriceDate();
         }
 
         return this.getData(tProduct.PARAM_PRICE_DATES).slice(-2).shift();
@@ -248,7 +252,7 @@ abstract class tProduct {
     };
 
     getPriceDateForViewCount(): boolean {
-        return this.getCurrentPrice() > this.getLastPrice() || this.getPriceDateCount() >= 2;
+        return this.getCurrentPrice() > this.getPrevLastPrice() || this.getPriceDateCount() >= 2;
     };
 
     appendCurrentPriceAndQty(currentPrice: number, currentQty: number) {
