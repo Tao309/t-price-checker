@@ -243,17 +243,17 @@ function tHtml(type, tPriceChecker) {
     };
     this.getPriceElement = function(productModel, itemElement) {
         var self = this;
-        var oldMinPrice = productModel.getLastPrice();
+        var oldMinPrice = productModel.getPrevLastPrice();
         var currentPrice = productModel.getCurrentPrice();
         var checkPrice = productModel.getListenPriceValue();
 
         var colorClassName = 'not-changed';
-        if (currentPrice > oldMinPrice) {
-            this.tEventListener.whenFoundPriceUp(productModel, itemElement, this.tPriceChecker);
-        } else if(currentPrice < oldMinPrice) {
-            this.tEventListener.whenFoundPriceDown(productModel, itemElement, this.tPriceChecker);
-        } else {
-            this.tEventListener.whenPriceIsNotChanged(productModel, itemElement, this.tPriceChecker);
+        if (oldMinPrice) {
+            if (currentPrice > oldMinPrice) {
+                this.tEventListener.whenFoundPriceUp(productModel, itemElement, this.tPriceChecker);
+            } else {
+                this.tEventListener.whenPriceIsNotUp(productModel, itemElement, this.tPriceChecker);
+            }
         }
 
         if (productModel.getFlag(tProduct.FLAG_IS_PRICE_DOWN)) {
@@ -314,11 +314,11 @@ function tHtml(type, tPriceChecker) {
         // Последняя цена END
 
         // Дата последней низкой цены.
-        if (productModel.isAvailable() && productModel.getLastDate()) {
+        if (productModel.isAvailable() && productModel.getPrevLastDate()) {
             div.append(
                 this.createElement('div', {
                     className: 't-price-old-date',
-                    textContent: tProduct.convertDateToString(productModel.getLastDate())
+                    textContent: tProduct.convertDateToString(productModel.getPrevLastDate())
                 })
             );
         }

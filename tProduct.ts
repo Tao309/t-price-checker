@@ -169,7 +169,7 @@ abstract class tProduct {
         this.save();
     };
 
-    // Получаем последний сток.
+    // Получаем последний блок цены.
     getLastPriceDate(): PriceDate|null {
         return this.getData(tProduct.PARAM_PRICE_DATES) ? this.getData(tProduct.PARAM_PRICE_DATES).slice(-1).pop() : null;
     }
@@ -180,6 +180,25 @@ abstract class tProduct {
 
     getLastDate(): Date {
         return this.getLastPriceDate() ? this.getLastPriceDate().date : null;
+    };
+
+    // Получаем пред последний блок цены, который была ранее текущей, т.к. текущая это последняя цена
+    getPrevLastPriceDate(): PriceDate|null {
+        if (!this.getData(tProduct.PARAM_PRICE_DATES) || this.getData(tProduct.PARAM_PRICE_DATES).length < 2) {
+            return null;
+        }
+
+        return this.getData(tProduct.PARAM_PRICE_DATES).slice(-2).shift();
+    }
+
+    // Получаем пред последнюю цену
+    getPrevLastPrice(): number {
+        return this.getPrevLastPriceDate() ? this.getPrevLastPriceDate().price : null;
+    };
+
+    // Получаем пред последнюю дату
+    getPrevLastDate(): Date {
+        return this.getPrevLastPriceDate() ? this.getPrevLastPriceDate().date : null;
     };
 
     // Получаем последний сток.

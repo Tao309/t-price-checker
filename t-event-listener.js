@@ -44,26 +44,17 @@ function tEventListener(type) {
         productModel.setFlag(tProduct.FLAG_IS_PRICE_UP, true);
     }
 
-    // Когда найдено, что цена понизилась
-    this.whenFoundPriceDown = function (productModel, item, tPriceChecker) {
+    // Когда найдено, что цена не повысилась
+    this.whenPriceIsNotUp = function (productModel, item, tPriceChecker) {
         if (!productModel.isAvailable()) {return;}
+
+        if (tProduct.getDiffDateDays(productModel.getPrevLastDate(), new Date()) > 1) {
+            return;
+        }
+
         tPriceChecker.priceDownChanged++;
         item.setAttribute('data-product-price-decrease', 1);
         productModel.setFlag(tProduct.FLAG_IS_PRICE_DOWN, true);
-    }
-
-    // Когда цена не изменилась сейчас
-    this.whenPriceIsNotChanged = function (productModel, item, tPriceChecker) {
-        var lastDate = productModel.getLastDate();
-        var currentDate = new Date();
-
-        if (currentDate.getTime() < lastDate.getTime() && productModel.isAvailable()) {
-            tPriceChecker.priceDownChanged++;
-            item.setAttribute('data-product-price-decrease', 1);
-            productModel.setFlag(tProduct.FLAG_IS_PRICE_DOWN, true);
-
-            // productModel.oldCurrentPrice = product.dates[product.dates.length - 2].price;
-        }
     }
 
     // Найден товар с ценой, ниже отслеживаемой

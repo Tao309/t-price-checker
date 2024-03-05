@@ -27,6 +27,7 @@ function tPriceStyle(initType) {
                     .t-old-price-percent {padding-left: 6px;}
                     .t-old-price .t-price-old-date {padding-left: 4px;}      
                     .t-old-price-actions .t-button-type-remove {right: 40px;}
+                    .t-item-title-column > .t-release-date {margin-top: 10px;}
                 </style>`);
                 break;
             case TYPE_WILDBERRIES:

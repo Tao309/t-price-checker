@@ -623,7 +623,7 @@ function tPriceChecker() {
         var self = this;
 
         var toRemove = document.querySelector('.t-head-result');
-        if(toRemove) {
+        if (toRemove) {
             this.priceUpChanged += toRemove.getAttribute('data-price-up');
             this.priceDownChanged += toRemove.getAttribute('data-price-down');
 
