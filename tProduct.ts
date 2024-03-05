@@ -248,7 +248,7 @@ abstract class tProduct {
     };
 
     getPriceDateForViewCount(): boolean {
-        return this.getCurrentPrice() > this.getLastPrice() || this.getPriceDateCount() > 2;
+        return this.getCurrentPrice() > this.getLastPrice() || this.getPriceDateCount() >= 2;
     };
 
     appendCurrentPriceAndQty(currentPrice: number, currentQty: number) {
