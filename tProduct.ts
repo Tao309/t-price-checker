@@ -496,8 +496,8 @@ class tProductLocal extends tProduct implements tProductInterface {
             );
         }
 
-        if (typeof data.stock !== 'undefined') {
-            data.stock.forEach(function(row) {
+        if (typeof data.stocks !== 'undefined') {
+            data.stocks.forEach(function(row) {
                 self.appendNewStock(row.qty, new Date(row.date))
             });
         } else if (typeof data.maxQty !== 'undefined') {
