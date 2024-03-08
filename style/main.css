@@ -32,8 +32,9 @@
 .t-old-price .t-check-price:before {content:'⚠'; color: #dadada; font-size: 1.4em;}
 .t-old-price .t-check-price.t-check-price-available:before {color: #08d106;}
 
-.t-button-icon.t-button-type-remove {font-size: 1rem;  color: #ec0000; margin: 0;}
-.t-button-icon.t-button-type-remove::before {content: '✖';}
+.t-button-icon.t-button-type-remove {font-size: 1rem; color: #a5a5a5; margin: 0;}
+.t-button-icon.t-button-type-remove::before {content: '✕';}
+.t-button-icon.t-button-type-remove:hover {color: #ec0000;}
 .t-old-price-actions .t-button-type-remove {display:none; position:absolute; right: 34px; font-weight:bold;}
 .t-old-price:hover .t-old-price-actions .t-button-type-remove {display:inline-block;}
 
