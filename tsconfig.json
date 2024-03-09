@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {},
+  "files": [
+    "tProduct.ts",
+    "tProductRepository.ts"
+  ]
+}

@@ -1,6 +1,13 @@
-function tProductRepository(type) {
-    this.type = type;
-    this.initProduct = function(productId, currentPrice, title, itemStockQty) {
+// https://transform.tools/typescript-to-javascript
+
+class tProductRepository {
+    type;
+
+    constructor(type: string) {
+        this.type = type;
+    };
+
+    initProduct(productId: number, currentPrice: number, title: string, itemStockQty: number): tProductLocal {
         var product = tProductLocal.get(this.type + '-' + productId);
         var requireToSave;
 
@@ -65,7 +72,8 @@ function tProductRepository(type) {
 
         return product;
     };
-    this.getProductsBySameTitle = function(searchProduct) {
+
+    getProductsBySameTitle(searchProduct: tProductLocal): tProductLocal[] {
         var foundProducts = [];
         if(!searchProduct.getTitle()) {return foundProducts;}
 
