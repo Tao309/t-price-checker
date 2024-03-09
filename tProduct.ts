@@ -413,14 +413,14 @@ abstract class tProduct {
 // class tProductApi extends tProduct implements tProductInterface {
 
 class tProductLocal extends tProduct implements tProductInterface {
-    constructor(data: Object|undefined) {
+    constructor(data: Object|undefined, gmId?: string|undefined) {
         super();
 
-        this.importData(data);
+        this.importData(data, gmId);
     };
 
     // Импорт данных с json массива TamperMonkey.
-    importData(data: Object|undefined) {
+    importData(data: Object|undefined, gmId?: string|undefined) {
         if (typeof data === 'undefined') {
             return;
         }
@@ -429,10 +429,14 @@ class tProductLocal extends tProduct implements tProductInterface {
 
         if (typeof data.id !== 'undefined') {
             this.setData(tProduct.PARAM_PRODUCT_ID, data.id);
+        } else if(gmId !== 'undefined') {
+            this.setData(tProduct.PARAM_PRODUCT_ID, gmId.split('-').pop());
         }
 
         if (typeof data.type !== 'undefined') {
             this.setData(tProduct.PARAM_TYPE, data.type);
+        } else if(gmId !== 'undefined') {
+            this.setData(tProduct.PARAM_TYPE, gmId.split('-').shift());
         }
 
         if (typeof data.title !== 'undefined') {
@@ -547,7 +551,7 @@ class tProductLocal extends tProduct implements tProductInterface {
             return null;
         }
 
-        return new tProductLocal(JSON.parse(gmValue));
+        return new tProductLocal(JSON.parse(gmValue), id);
     };
 
     static removeById(id) {
@@ -568,11 +572,11 @@ class tProductLocal extends tProduct implements tProductInterface {
         var product = {
             id: this.getData(tProduct.PARAM_PRODUCT_ID),
             title: this.getData(tProduct.PARAM_TITLE),
-            price: this.getLastPrice(),
-            lastDate: this.getLastDate(),
+                price: this.getLastPrice(),
+                lastDate: this.getLastDate(),
             type: this.getData(tProduct.PARAM_TYPE),
-            maxQty: this.getLastStockQty(),
-            maxQtyDate: this.getLastStockDate(),
+                maxQty: this.getLastStockQty(),
+                maxQtyDate: this.getLastStockDate(),
             stock: this.getData(tProduct.PARAM_STOCKS),
             available: this.getData(tProduct.PARAM_AVAILABLE) ?? false,
             not_available_date_from: this.getNotAvailableDateFrom(),
