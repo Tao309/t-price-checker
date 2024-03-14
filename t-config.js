@@ -7,17 +7,16 @@ const TYPE_KNIGOFAN = 'knigofan';//knigofan.ru
 const SORT_UP = 'up';
 const SORT_DOWN = 'down';
 
-function tPriceConfig(initType) {
-    this.type = initType;
+function tPriceConfig() {
     this.initConfig = function(tPriceChecker) {
-        switch(this.type) {
+        switch(tConfig.getShopType()) {
             case TYPE_OZON:
                 tPriceChecker.setConfig({timeout: 1000});
                 break;
         }
     };
     this.initSelectors = function(tPriceChecker) {
-        switch(this.type) {
+        switch(tConfig.getShopType()) {
             case TYPE_KNIGOFAN:
                 tPriceChecker.setSelectors({
                     listItems: '#basket-item-table .basket-items-list-item-container',

@@ -67,6 +67,8 @@ abstract class tProduct {
 
     static readonly FLAG_IS_PRICE_UP = 'is_price_up';
     static readonly FLAG_IS_PRICE_DOWN = 'is_price_down';
+    static readonly FLAG_TO_SAVE_PRICE_DATES = 'flag_to_save_price_dates';
+    static readonly FLAG_TO_SAVE_STOCKS = 'flag_to_save_stocks';
 
     // Текущие данные модели.
     data = {};
@@ -81,7 +83,7 @@ abstract class tProduct {
 
     };
 
-    getData(name: string|null): any|tProductData {
+    getData(name?: string|null): any|tProductData {
         if (name) {
             return typeof this.data[name] !== 'undefined' ? this.data[name] : null;
         }
@@ -103,6 +105,12 @@ abstract class tProduct {
 
     setFlag(name: string, value: boolean) {
         this.setData(name, value);
+    };
+
+    unsetFlag(name: string) {
+        if (this.getFlag(name)) {
+            delete this.data[name];
+        }
     };
 
     getCurrentPrice(): number {
@@ -303,6 +311,10 @@ abstract class tProduct {
         this.setData(tProduct.PARAM_STOCKS, stocks);
     };
 
+    toJson() {
+        return JSON.stringify(this.getData());
+    };
+
     // New get/set value to model BEGIN
     setTitle(title: string) {
         if(typeof title === 'undefined') {
@@ -413,30 +425,41 @@ abstract class tProduct {
 // class tProductApi extends tProduct implements tProductInterface {
 
 class tProductLocal extends tProduct implements tProductInterface {
-    constructor(data: Object|undefined, gmId?: string|undefined) {
+    constructor(data: Object|undefined, typeProductId?: string|undefined) {
         super();
 
-        this.importData(data, gmId);
+        this.importData(data, typeProductId);
     };
 
     // Импорт данных с json массива TamperMonkey.
-    importData(data: Object|undefined, gmId?: string|undefined) {
+    importData(data: Object|undefined, typeProductId?: string|undefined) {
         if (typeof data === 'undefined') {
             return;
         }
 
+        if (!tConfig.isApiEnabled()) {
+            this.importTamperData(data, typeProductId);
+        } else {
+            this.importApiData(data, typeProductId);
+        }
+
+        this.applyDataToOriginalData();
+    };
+
+    // Импорт данных с json TamperMonkey
+    importTamperData(data: Object|undefined, typeProductId?: string|undefined) {
         var self = this;
 
         if (typeof data.id !== 'undefined') {
             this.setData(tProduct.PARAM_PRODUCT_ID, data.id);
-        } else if(gmId !== 'undefined') {
-            this.setData(tProduct.PARAM_PRODUCT_ID, gmId.split('-').pop());
+        } else if(typeProductId !== 'undefined') {
+            this.setData(tProduct.PARAM_PRODUCT_ID, typeProductId.split('-').pop());
         }
 
         if (typeof data.type !== 'undefined') {
             this.setData(tProduct.PARAM_TYPE, data.type);
-        } else if(gmId !== 'undefined') {
-            this.setData(tProduct.PARAM_TYPE, gmId.split('-').shift());
+        } else if(typeProductId !== 'undefined') {
+            this.setData(tProduct.PARAM_TYPE, typeProductId.split('-').shift());
         }
 
         if (typeof data.title !== 'undefined') {
@@ -510,15 +533,53 @@ class tProductLocal extends tProduct implements tProductInterface {
                 typeof data.maxQtyDate !== 'undefined' ? new Date(data.maxQtyDate) : null
             );
         }
+    };
 
-        this.applyDataToOriginalData();
+    // Импорт данных с API
+    importApiData(data: Object|undefined, typeProductId?: string|undefined) {
+        var self = this;
+
+        this.setData(tProduct.PARAM_PRODUCT_ID, data.product_id);
+        this.setData(tProduct.PARAM_TYPE, data.shop_type);
+        this.setData(tProduct.PARAM_TITLE, data.title);
+
+        if (typeof data.available_date_from !== 'undefined') {
+            this.setData(tProduct.PARAM_AVAILABLE_DATE_FROM, new Date(data.available_date_from));
+        }
+
+        if (typeof data.not_available_date_from !== 'undefined') {
+            this.setData(tProduct.PARAM_NOT_AVAILABLE_DATE_FROM, new Date(data.not_available_date_from));
+        }
+
+        if (typeof data.listen_price_value !== 'undefined') {
+            this.setData(tProduct.PARAM_LISTEN_PRICE_VALUE, data.listen_price_value);
+        }
+
+        if (typeof data.release_date !== 'undefined') {
+            this.setData(tProduct.PARAM_RELEASE_DATE, data.release_date);
+        }
+
+        this.setDateCreated(data.date_created);
+        this.setDateUpdated(data.date_updated);
+
+        if (typeof data.price_dates !== 'undefined') {
+            data.dates.forEach(function (row) {
+                self.appendNewMinPrice(row.price, new Date(row.date));
+            });
+        }
+
+        if (typeof data.stocks !== 'undefined') {
+            data.stocks.forEach(function (row) {
+                self.appendNewStock(row.qty, new Date(row.date))
+            });
+        }
     };
 
     applyDataToOriginalData() {
         this.originalData = this.data;
     };
 
-    getId(): number|string {
+    getId(): string {
         return this.getData(tProduct.PARAM_TYPE) + '-' + this.getProductId();
     };
 
@@ -526,7 +587,7 @@ class tProductLocal extends tProduct implements tProductInterface {
         return this.getData(tProduct.PARAM_PRODUCT_ID);
     };
 
-    static create(data: Object, currentPrice: number, currentQty: number): tProduct {
+    static create(data: Object, currentPrice: number, currentQty: number): tProductLocal {
         var productModel = new tProductLocal(data);
 
         productModel.appendCurrentPriceAndQty(currentPrice, currentQty);
@@ -544,77 +605,21 @@ class tProductLocal extends tProduct implements tProductInterface {
         return productModel;
     };
 
-    // id - type + product_id
-    static get(id): tProduct {
-        var gmValue = GM_getValue(id);
-        if (typeof gmValue === 'undefined') {
-            return null;
-        }
-
-        return new tProductLocal(JSON.parse(gmValue), id);
+    static get(typeProductId): tProductLocal {
+        return tProductRepository.getProduct(typeProductId);
     };
 
-    static removeById(id) {
-        var gmValue = GM_getValue(id);
-        if (typeof gmValue === 'undefined') {
-            console.log('Product {' + id + '} not found for remove');
-            return false;
+    save(toMassSave: boolean = false) {
+        if (toMassSave === true) {
+            tProductRepository.addProductToMassSave(this);
+            return;
         }
 
-        GM_deleteValue(id);
-
-        console.log('Product {' + id + '} is removed');
-
-        return true;
-    };
-
-    save() {
-        var product = {
-            id: this.getData(tProduct.PARAM_PRODUCT_ID),
-            title: this.getData(tProduct.PARAM_TITLE),
-                price: this.getLastPrice(),
-                lastDate: this.getLastDate(),
-            type: this.getData(tProduct.PARAM_TYPE),
-                maxQty: this.getLastStockQty(),
-                maxQtyDate: this.getLastStockDate(),
-            stock: this.getData(tProduct.PARAM_STOCKS),
-            available: this.getData(tProduct.PARAM_AVAILABLE) ?? false,
-            not_available_date_from: this.getNotAvailableDateFrom(),
-            available_date_from: this.getAvailableDateFrom(),
-            checkPrice: this.getData(tProduct.PARAM_LISTEN_PRICE_VALUE),
-            releaseDate: this.getReleaseDate(),
-            dateCreated: this.getDateCreated(),
-            dateUpdated: new Date()
-        };
-
-        var dates  = [];
-        this.getData(tProduct.PARAM_PRICE_DATES).forEach(function (priceDate: PriceDate) {
-            dates.push({
-                date: priceDate.date,
-                price: priceDate.price
-            });
-        });
-
-        product.dates = dates;
-
-        // return product;
-
-        GM_setValue(this.getId(), JSON.stringify(product));
+        tProductRepository.saveProduct(this);
     };
 
     delete() {
-        var product = this.get(this.getId());
-        if (!product) {
-            console.log('Can not remove cause product #{' + this.getId() + '} is not found');
-
-            return false;
-        }
-
-        GM_deleteValue(this.getId());
-
-        console.log('Product {' + this.getId() + '} is removed');
-
-        return true;
+        return tProductRepository.removeProduct(this);
     };
 }
 

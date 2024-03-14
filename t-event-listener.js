@@ -1,12 +1,11 @@
-function tEventListener(type) {
-    this.type = type;
+function tEventListener() {
     this.tHtml;
     this.tProductRepository;
     this.tProduct;
 
     this.init = function () {
-        this.tProductRepository = new tProductRepository(this.type);
-        this.tHtml = new tHtml(this.type);
+        this.tProductRepository = new tProductRepository();
+        this.tHtml = new tHtml();
     }
 
     // После успешной обработки позиции для списка
@@ -64,14 +63,14 @@ function tEventListener(type) {
     }
 
     // Удаление из хранилища
-    this.whenRemoveFromStorage = function (parentEl) {
+    this.whenRemoveFromStorage = function (parentEl, productModel) {
         var productId = parentEl.getAttribute('data-product-id');
         if (!isExists(productId)) {
             console.log('Can not remove cause product-id {'+productId+'} is empty');
             return;
         }
 
-        if (!tProductLocal.removeById(this.type + '-' +productId)) {return;}
+        if (!productModel.delete()) {return;}
 
         if (!parentEl) {
             console.log('Parent element for product {'+productId+'} is not found');

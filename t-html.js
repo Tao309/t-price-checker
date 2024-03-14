@@ -1,8 +1,7 @@
-function tHtml(type, tPriceChecker) {
-    this.type = type;
-    this.tEventListener = new tEventListener(type);
+function tHtml(tPriceChecker) {
+    this.tEventListener = new tEventListener();
     this.tPriceChecker = tPriceChecker;
-    this.tProductRepository = new tProductRepository(type);
+    this.tProductRepository = new tProductRepository();
     this.checkerElements = {
         'check-price': {label: 'отслеживаемые'},
         'price-decrease': {label: 'понижение'},
@@ -218,7 +217,7 @@ function tHtml(type, tPriceChecker) {
         removeButton.addEventListener('click', function(event) {
             event.preventDefault();
 
-            if (tProductLocal.removeById(foundProduct.getId())) {
+            if (foundProduct.delete()) {
                 event.target.closest('.t-same-product').remove();
             }
         });
@@ -243,7 +242,7 @@ function tHtml(type, tPriceChecker) {
     };
     this.getPriceElement = function(productModel, itemElement) {
         var self = this;
-        var oldMinPrice = productModel.getPrevLastPrice();
+        var oldMinPrice = productModel.getLastPrice();
         var currentPrice = productModel.getCurrentPrice();
         var checkPrice = productModel.getListenPriceValue();
 
@@ -370,7 +369,7 @@ function tHtml(type, tPriceChecker) {
 
             var element = productModel.isAvailable() ? event.target.closest('.' + self.tPriceChecker.selectors.listItem) : event.target.closest('.' + self.tPriceChecker.selectors.listItemNotAvailable);
 
-            self.tEventListener.whenRemoveFromStorage(element);
+            self.tEventListener.whenRemoveFromStorage(element, productModel);
         });
         actionsDiv.append(removeButton);
         // Кнопки действий END

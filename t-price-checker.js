@@ -1,24 +1,33 @@
 function tPriceChecker() {
-    this.type = null;
     this.isLoaded = false;
-    this.getInitType = function() {
+    this.initShopType = function() {
+        let shopType;
         switch(window.location.host) {
             case 'knigofan.ru':
-                return TYPE_KNIGOFAN;
+                shopType = TYPE_KNIGOFAN;
+                break;
             case 'ffan.ru':
-                return TYPE_FFAN;
+                shopType = TYPE_FFAN;
+                break;
             case 'www.ozon.ru':
             case 'ozon.ru':
-                return TYPE_OZON;
+                shopType = TYPE_OZON;
+                break;
             case 'www.wildberries.ru':
             case 'wildberries.ru':
-                return TYPE_WILDBERRIES;
+                shopType = TYPE_WILDBERRIES;
+                break;
             case 'www.chitai-gorod.ru':
             case 'chitai-gorod.ru':
-                return TYPE_CHITAI_GOROD;
-            default: return null;
+                shopType = TYPE_CHITAI_GOROD;
+                break;
+            default:
+                throw new Error('Domain is not correct');
         }
+
+        tConfig.setShopType(shopType);
     };
+
     this.addBasketHead = true;
     this.responseInterceptEnabled = []
 
@@ -89,7 +98,7 @@ function tPriceChecker() {
     this.tProduct;// класс позиции
 
     this.getBasketUrl = function() {
-        switch(this.type) {
+        switch(tConfig.getShopType()) {
             case TYPE_WILDBERRIES:
                 return '/lk/basket';
             case TYPE_CHITAI_GOROD:
@@ -116,22 +125,22 @@ function tPriceChecker() {
         })();
     };
     this.initConfig = function() {
-        this.tPriceConfig = new tPriceConfig(this.type);
+        this.tPriceConfig = new tPriceConfig();
         this.tPriceConfig.initConfig(this);
         this.tPriceConfig.initSelectors(this);
 
-        this.tPriceStyle = new tPriceStyle(this.type);
-        this.tPriceStyle.addCssStyles(this);
+        this.tPriceStyle = new tPriceStyle();
+        this.tPriceStyle.addTypeStyles();
 
-        this.tProductRepository = new tProductRepository(this.type);
-        this.tHtml = new tHtml(this.type, this);
+        this.tProductRepository = new tProductRepository();
+        this.tHtml = new tHtml(this);
 
-        this.tEventListener = new tEventListener(this.type);
+        this.tEventListener = new tEventListener();
         this.tEventListener.init();
 
         if (this.isResponseInterceptEnabled()) {
             console.log('!!!!!!! ResponseInterceptEnabled !!!!!!!');
-            this.tResponseInterceptor = (new tResponseInterceptor(this.type, this)).init();
+            this.tResponseInterceptor = (new tResponseInterceptor(this)).init();
         }
     };
     this.preInitFirstTime = function() {
@@ -160,13 +169,11 @@ function tPriceChecker() {
         })();
     };
     this.init = function(responseInterceptors) {
-        this.type = this.getInitType();
-        if(!this.type) {
-            alert('Domain is not correct');
-            return;
-        }
+        console.log('init tPriceChecker');
 
-        this.responseInterceptEnabled[this.type] = responseInterceptors.includes(this.type);
+        this.initShopType();
+
+        this.responseInterceptEnabled[tConfig.getShopType()] = responseInterceptors.includes(tConfig.getShopType());
 
         //this.initUrlChangedListener();
         this.initConfig();
@@ -180,13 +187,9 @@ function tPriceChecker() {
         this.launch();
     };
     this.reInit = function() {
-        this.type = this.getInitType();
-        if(!this.type) {
-            alert('Domain is not correct');
-            return;
-        }
+        console.log('reInit tPriceChecker');
 
-        console.log('Reinit');
+        this.initShopType();
 
         this.initConfig();
         this.removePrevTimeFields();
@@ -195,7 +198,7 @@ function tPriceChecker() {
     };
     // Включён ли обработки ответа сервера для типа магазина
     this.isResponseInterceptEnabled = function() {
-        return this.responseInterceptEnabled[this.type] ?? false;
+        return this.responseInterceptEnabled[tConfig.getShopType()] ?? false;
     };
     // Удаление элементов, добавленных с прошлого захода
     this.removePrevTimeFields = function() {
@@ -242,7 +245,7 @@ function tPriceChecker() {
 
                 if (availableItems.length > 0) {
                     if (self.isResponseInterceptEnabled()) {
-                        console.log(availableItems.length + '|' + self.responseItems[self.type].length + ' dom|json items are found!');
+                        console.log(availableItems.length + '|' + self.responseItems[tConfig.getShopType()].length + ' dom|json items are found!');
                     } else {
                         console.log(availableItems.length + ' dom items are found!');
                     }
@@ -254,7 +257,7 @@ function tPriceChecker() {
                     }, self.isResponseInterceptEnabled() ? 1 : 500);
                 }
 
-                if(limitCount >= 50) {
+                if (limitCount >= 50) {
                     console.log('Attempt limit reached in '+limitCount);
                     clearInterval(startChecking);
                 }
@@ -276,7 +279,7 @@ function tPriceChecker() {
             self.handleAvailableItem(item, i);
         });
 
-        if (this.type === TYPE_OZON) {
+        if (tConfig.getShopType() === TYPE_OZON) {
             basketHeader = document.querySelector(this.selectors.basketHeader).parentNode;
             //var pattern = '[data-widget="split"]:not(.t-checked)';
 
@@ -295,7 +298,7 @@ function tPriceChecker() {
     this.handleAvailableItem = function(item, i) {
         var priceColumn, titleColumn, qtyColumn, imageColumn;
 
-        switch(this.type) {
+        switch(tConfig.getShopType()) {
             case TYPE_KNIGOFAN:
                 priceColumn = item.querySelector('td.basket-items-list-item-price');
                 qtyColumn = item.querySelector('td.basket-items-list-item-amount');
@@ -392,7 +395,7 @@ function tPriceChecker() {
         }
     };
     this.getFindingProperty = function() {
-        switch(this.type) {
+        switch(tConfig.getShopType()) {
             case TYPE_WILDBERRIES:
                 return '.good-info__seller';
             case TYPE_CHITAI_GOROD:
@@ -402,16 +405,19 @@ function tPriceChecker() {
             case TYPE_OZON:
                 return null;
             default:
-                alert('Not found getFindingProperty for type: '+this.type);
+                alert('Not found getFindingProperty for type: ' + tConfig.getShopType());
         }
     };
-    this.jsonItems = [];
+    // this.jsonItems = [];
+    // Продукты, прлученные по АПИ.
+    this.apiItems = [];
+    // Продукты пришедшие после парсинга с перехватчика.
     this.responseItems = [];
     this.getJsonItemByCode = function(code) {
         var self = this;
 
-        return this.responseItems[self.type].find(item => {
-            if (self.type === TYPE_KNIGOFAN) {
+        return this.responseItems[tConfig.getShopType()].find(item => {
+            if (tConfig.getShopType() === TYPE_KNIGOFAN) {
                 return item.id === code;
             }
             
@@ -421,27 +427,57 @@ function tPriceChecker() {
             //return item.imageId === code;
         }) ?? null;
     };
-    // Начинаем обработку элементов
+    // Инит обработки элементов.
     this.initPriceChecking = function() {
         var self = this;
         self.removePrevTimeFields();
 
-        if (!self.isResponseInterceptEnabled()) {
-            switch (this.type) {
-                case TYPE_OZON:
-                    //this.jsonItems = __NUXT__.state.shared.itemsTrackingInfo;
-                    this.jsonItems = JSON.parse($('div[id^=state-split-]').data('state')).items;
-
-                    break;
-                case TYPE_WILDBERRIES:
-                    var name, basketStorage;
-                    var u = JSON.parse(window.localStorage._user_deliveries).u;
-                    eval("name = 'wb_basket_"+u+"';");
-                    eval("basketStorage = window.localStorage."+name+"");
-                    this.jsonItems = JSON.parse(basketStorage).basketItems;
-                    break;
-            }
+        if (!tConfig.isApiEnabled()) {
+            self.startPriceChecking();
+            return;
         }
+
+        let productIds = this.responseItems[tConfig.getShopType()].map(item => item.product_id);
+
+        if (!productIds.length) {
+            console.log('ResponseItems is empty');
+            return;
+        }
+
+        tApiRequest.getProductsByShopType(tConfig.getShopType(), productIds, function (response) {
+            try {
+                var r = JSON.parse(response);
+                console.log('Found by API: ' + r.length);
+
+                if (r.length > 0) {
+                    tProductRepository.setTempApiItems(r);
+
+                    self.startPriceChecking();
+                }
+            } catch (e) {
+                console.log('Error while getProductsByShopType parsing', response);
+            }
+        });
+    };
+    // Начинаем обработку элементов.
+    this.startPriceChecking = function () {
+        var self = this;
+        // if (!self.isResponseInterceptEnabled()) {
+        //     switch (this.type) {
+        //         case TYPE_OZON:
+        //             //this.jsonItems = __NUXT__.state.shared.itemsTrackingInfo;
+        //             this.jsonItems = JSON.parse($('div[id^=state-split-]').data('state')).items;
+        //
+        //             break;
+        //         case TYPE_WILDBERRIES:
+        //             var name, basketStorage;
+        //             var u = JSON.parse(window.localStorage._user_deliveries).u;
+        //             eval("name = 'wb_basket_"+u+"';");
+        //             eval("basketStorage = window.localStorage."+name+"");
+        //             this.jsonItems = JSON.parse(basketStorage).basketItems;
+        //             break;
+        //     }
+        // }
 
         // Обработка позиций в наличии и недоступных
         document.querySelectorAll('.'+self.selectors.listItem + ',.'+self.selectors.listItemNotAvailable).forEach(function(item, i) {
@@ -459,6 +495,10 @@ function tPriceChecker() {
         this.appendCheckerElement('is-waiting-for-release-date', this.isWaitingForReleaseDate);
 
         this.appendQtyLimitInfo();
+
+        setTimeout(function () {
+            tProductRepository.processMassSave();
+        }, 5);
     };
     // Начинаем обработку одного элемента через responseIntercept
     this.initOnePositionByResponseIntercept = function(item) {
@@ -469,11 +509,11 @@ function tPriceChecker() {
             productId, currentPrice = null, title = null, qty = 1, itemStockQty = 0,
             isNotAvailable = false;
 
-        if (self.type !== TYPE_KNIGOFAN) {
+        if (tConfig.getShopType() !== TYPE_KNIGOFAN) {
             var itemIdProperty = item.querySelector(self.getFindingProperty());
         }
 
-        switch (self.type) {
+        switch (tConfig.getShopType()) {
             case TYPE_KNIGOFAN:
                 responseProductId = item.getAttribute('data-id');
                 break;
@@ -582,7 +622,7 @@ function tPriceChecker() {
     }
     this.afterNotAvailableInitOneProduct = function (productId, item) {
         var self = this;
-        var productModel = tProductLocal.get(this.type + '-' + productId);
+        var productModel = tProductLocal.get(tConfig.getShopType() + '-' + productId);
 
         if (!productModel) {
             console.log('Not found product for afterNotAvailableInitOneProduct', productId, item);

@@ -1,12 +1,6 @@
-function tPriceStyle(initType) {
-    this.type = initType;
-    this.addCssStyles = function() {
-        // var head = document.querySelector("head");
-        // head.innerHTML += `<style></style>`;
-        this.addTypeStyles();
-    };
+function tPriceStyle() {
     this.addTypeStyles = function() {
-        switch(this.type) {
+        switch(tConfig.getShopType()) {
             case TYPE_KNIGOFAN:
                 this.appendCssStyles(`<style>
                     .t-head-result {left: 800px; position: absolute; top: -45px;}

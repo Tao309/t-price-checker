@@ -1,14 +1,123 @@
 // https://transform.tools/typescript-to-javascript
 
 class tProductRepository {
-    type;
+    static tempApiItems = [];
+    static toSaveProducts = [];
 
-    constructor(type: string) {
-        this.type = type;
+    constructor() {
+        if (this.constructor !== tProductRepository) {
+            throw new Error('Subclassing is not allowed');
+        }
     };
 
+    static setTempApiItems(apiItems) {
+        let items = [];
+
+        apiItems.forEach(function (apiItem) {
+            items[apiItem.shop_type + '-' + apiItem.product_id] = apiItem;
+        });
+
+        tProductRepository.tempApiItems = items;
+    };
+
+    static getTempApiItemByTypeProductId(typeProductId) {
+        return tProductRepository.tempApiItems[typeProductId] ?? null;
+    };
+
+    static getProduct(typeProductId): tProductLocal {
+        if (!tConfig.isApiEnabled()) {
+            var gmValue = GM_getValue(typeProductId);
+            if (typeof gmValue === 'undefined') {
+                return null;
+            }
+
+            return new tProductLocal(JSON.parse(gmValue), typeProductId);
+        }
+
+        let tempApiItem = tProductRepository.getTempApiItemByTypeProductId(typeProductId);
+        return tempApiItem ? new tProductLocal(tempApiItem, typeProductId) : null;
+    };
+
+    static removeProduct(productModel: tProductLocal) {
+        if (!tConfig.isApiEnabled()) {
+            let typeProductId = productModel.getId();
+
+            var gmValue = GM_getValue(typeProductId);
+            if (typeof gmValue === 'undefined') {
+                console.log('Product {' + typeProductId + '} not found for remove');
+                return false;
+            }
+
+            GM_deleteValue(typeProductId);
+
+            console.log('Product {' + typeProductId + '} is removed');
+
+            return true;
+        }
+
+        tApiRequest.deleteProduct(productModel);
+
+        return true;
+    };
+
+    static saveProduct(productModel: tProductLocal) {
+        if (!tConfig.isApiEnabled()) {
+            var productObject = {
+                id: productModel.getData(tProduct.PARAM_PRODUCT_ID),
+                title: productModel.getData(tProduct.PARAM_TITLE),
+                price: productModel.getLastPrice(),
+                lastDate: productModel.getLastDate(),
+                type: productModel.getData(tProduct.PARAM_TYPE),
+                maxQty: productModel.getLastStockQty(),
+                maxQtyDate: productModel.getLastStockDate(),
+                stock: productModel.getData(tProduct.PARAM_STOCKS),
+                available: productModel.getData(tProduct.PARAM_AVAILABLE) ?? false,
+                not_available_date_from: productModel.getNotAvailableDateFrom(),
+                available_date_from: productModel.getAvailableDateFrom(),
+                checkPrice: productModel.getData(tProduct.PARAM_LISTEN_PRICE_VALUE),
+                releaseDate: productModel.getReleaseDate(),
+                dateCreated: productModel.getDateCreated(),
+                dateUpdated: new Date()
+            };
+
+            var dates = [];
+            productModel.getData(tProduct.PARAM_PRICE_DATES).forEach(function (priceDate: PriceDate) {
+                dates.push({
+                    date: priceDate.date,
+                    price: priceDate.price
+                });
+            });
+
+            productObject.dates = dates;
+
+            GM_setValue(productModel.getId(), JSON.stringify(productObject));
+        }
+
+        tApiRequest.saveProduct(productModel);
+    };
+
+    static addProductToMassSave(productModel: tProductLocal) {
+        tProductRepository.toSaveProducts.push(productModel);
+    };
+
+    static processMassSave() {
+        if (!tConfig.isApiEnabled() || !tProductRepository.toSaveProducts.length) {
+            return;
+        }
+
+        tApiRequest.saveProducts(tProductRepository.toSaveProducts, function (r) {
+
+        });
+    };
+
+    // Вероятно, не понадобится.
+    static saveProductValue(productModel: tProductLocal, fieldName) {
+        tApiRequest.saveProductValue(productModel, fieldName);
+    };
+
+    // перенести
     initProduct(productId: number, currentPrice: number, title: string, itemStockQty: number): tProductLocal {
-        var product = tProductLocal.get(this.type + '-' + productId);
+        var product = tProductLocal.get(tConfig.getShopType() + '-' + productId);
         var requireToSave;
 
         if (product) {
@@ -16,6 +125,7 @@ class tProductRepository {
             product.appendCurrentPriceAndQty(currentPrice, itemStockQty);
 
             if (product.getLastPrice() > currentPrice) {
+                product.setFlag(tProductLocal.FLAG_TO_SAVE_PRICE_DATES, true);
                 product.appendNewMinPrice(currentPrice);
                 requireToSave = true;
             }
@@ -42,6 +152,7 @@ class tProductRepository {
                 // Кол-во стало больше, но не прошло много дней, чтобы это был новый сток
                 isCurrentQtyMoreThanLastStock && !isStockMoreThanLimitChanged  && !isStockDaysLimitPassed
             ) {
+                product.setFlag(tProductLocal.FLAG_TO_SAVE_STOCKS, true);
                 product.changeLastStockQty(product.getCurrentQty());
                 requireToSave = true;
             } else if (
@@ -53,26 +164,31 @@ class tProductRepository {
                 || isStockMoreThanLimitChanged
                 || !product.getLastStock()
             ) {
+                product.setFlag(tProductLocal.FLAG_TO_SAVE_STOCKS, true);
                 product.appendNewStock(itemStockQty);
                 requireToSave = true;
             }
         } else {
             product = tProductLocal.create({
                 id: productId,
-                type: this.type,
+                type: tConfig.getShopType(),
                 title: title
             }, currentPrice, itemStockQty);
+
+            product.setFlag(tProductLocal.FLAG_TO_SAVE_PRICE_DATES, true);
+            product.setFlag(tProductLocal.FLAG_TO_SAVE_STOCKS, true);
 
             requireToSave = true;
         }
 
         if (requireToSave) {
-            product.save();
+            product.save(true);
         }
 
         return product;
     };
 
+    // перенести
     getProductsBySameTitle(searchProduct: tProductLocal): tProductLocal[] {
         var foundProducts = [];
         if(!searchProduct.getTitle()) {return foundProducts;}

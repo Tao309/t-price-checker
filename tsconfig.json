@@ -1,7 +1,9 @@
 {
   "compilerOptions": {},
   "files": [
+    "tConfig.ts",
     "tProduct.ts",
-    "tProductRepository.ts"
+    "tProductRepository.ts",
+    "tApiRequest.ts"
   ]
 }

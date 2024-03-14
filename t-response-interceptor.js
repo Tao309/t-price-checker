@@ -1,5 +1,4 @@
-function tResponseInterceptor(type, tPriceChecker) {
-  this.type = type;
+function tResponseInterceptor(tPriceChecker) {
   this.tPriceChecker = tPriceChecker;
   this.items = [];
   this.jsonItems = [];
@@ -22,7 +21,7 @@ function tResponseInterceptor(type, tPriceChecker) {
 
     this.initPathListener();
 
-    switch (this.type) {
+    switch (tConfig.getShopType()) {
       case TYPE_KNIGOFAN:
         document.addEventListener("DOMContentLoaded", (event) => {
           self.jsonItems = unsafeWindow.BX.Sale.BasketComponent.items;
@@ -30,10 +29,10 @@ function tResponseInterceptor(type, tPriceChecker) {
         });
         break;
       case TYPE_CHITAI_GOROD:
-        self.scriptWrapper(self.type);
+        self.scriptWrapper(tConfig.getShopType());
         break;
       case TYPE_WILDBERRIES:
-        self.scriptWrapperPromise(self.type);
+        self.scriptWrapperPromise(tConfig.getShopType());
         break;
       case TYPE_OZON:
         window.addEventListener('DOMContentLoaded',function () {
@@ -49,7 +48,7 @@ function tResponseInterceptor(type, tPriceChecker) {
           self.parseItems();
         });
 
-        self.scriptWrapperPromise(self.type);
+        self.scriptWrapperPromise(tConfig.getShopType());
         break;
     }
 
@@ -79,7 +78,7 @@ function tResponseInterceptor(type, tPriceChecker) {
   }
   this.scrollDownAndUp = function() {
     var self = this;
-    if (this.type === TYPE_OZON && self.currentPathName === '/cart') {
+    if (tConfig.getShopType() === TYPE_OZON && self.currentPathName === '/cart') {
       console.log('scrollDownAndUp by', window.innerHeight);
       startTimeout(function() {
         unsafeWindow.scrollTo(0, window.innerHeight);// || document.body.scrollHeight  || window.innerHeight
@@ -92,19 +91,16 @@ function tResponseInterceptor(type, tPriceChecker) {
   this.isBasketPage = function() {
     var self = this;
 
-    switch (self.type) {
+    switch (tConfig.getShopType()) {
       case TYPE_CHITAI_GOROD:
         return self.currentPathName === '/cart' && (self.requestPathName === '/api/v1/cart' || self.requestPathName.match('/autocomplete/template.html'));
-        break;
       case TYPE_WILDBERRIES:
         return self.currentPathName === '/lk/basket' && [
           '/lk/basket/spa/refresh',
           '/webapi/lk/basket/data'
         ].includes(self.requestPathName);
-        break;
       case TYPE_OZON:
         return self.currentPathName === '/cart' && self.requestPathName === '/api/entrypoint-api.bx/page/json/v2';
-        break;
       default:
         return false;
     }
@@ -112,16 +108,13 @@ function tResponseInterceptor(type, tPriceChecker) {
   this.isBookmarkPage = function() {
     var self = this;
 
-    switch (self.type) {
+    switch (tConfig.getShopType()) {
       case TYPE_CHITAI_GOROD:
         return (self.currentPathName === '/profile/bookmarks' || self.currentPathName === '/profile/bookmarks?tab=favorite') && self.requestPathName === '/api/v1/bookmarks';
-        break;
       case TYPE_WILDBERRIES:
         return self.currentPathName === '/lk/favorites';
-        break;
       case TYPE_OZON:
         return self.currentPathName === '/my/favorites';
-        break;
       default:
         return false;
     }
@@ -129,17 +122,16 @@ function tResponseInterceptor(type, tPriceChecker) {
   this.isSubscriptionkPage = function() {
     var self = this;
 
-    switch (self.type) {
+    switch (tConfig.getShopType()) {
       case TYPE_CHITAI_GOROD:
         return (self.currentPathName === '/profile/bookmarks' || self.currentPathName === '/profile/bookmarks?tab=subscriptions') && self.requestPathName === '/api/v1/subscriptions';
-        break;
       default:
         return false;
     }
   };
   this.addJS_Node = function(id, funcToRun, type) {
     var target = document.getElementsByTagName('head')[0] || document.body || document.documentElement;
-    var textContent = '(' + funcToRun.toString() + ')("'+this.type+'")';
+    var textContent = '(' + funcToRun.toString() + ')("'+tConfig.getShopType()+'")';
 
     GM_addElement(target, 'script', {
       id: id,
@@ -163,9 +155,9 @@ function tResponseInterceptor(type, tPriceChecker) {
     //console.log('parseItems', this.jsonItems);
 
     var self = this;
-    this.items[self.type] = this.items[self.type] ?? [];
+    this.items[tConfig.getShopType()] = this.items[tConfig.getShopType()] ?? [];
 
-    switch (this.type) {
+    switch (tConfig.getShopType()) {
       case TYPE_KNIGOFAN:
         Object.keys(self.jsonItems).forEach(key => {
           var product = self.jsonItems[key];
@@ -182,12 +174,12 @@ function tResponseInterceptor(type, tPriceChecker) {
 
           item.id = parseInt(product.ID);
 
-          self.items[self.type].push(item);
+          self.items[tConfig.getShopType()].push(item);
         });
         break;
       case TYPE_CHITAI_GOROD:
         this.jsonItems.forEach(function(product) {
-          self.items[self.type].push(self.assembleOneItem(
+          self.items[tConfig.getShopType()].push(self.assembleOneItem(
               product.goodsId,
               product.title,
               formatNumber(product.price),
@@ -207,7 +199,7 @@ function tResponseInterceptor(type, tPriceChecker) {
             maxQty += stock.qty;
           });
 
-          self.items[self.type].push(self.assembleOneItem(
+          self.items[tConfig.getShopType()].push(self.assembleOneItem(
               product.cod1S,
               product.goodsName,
               formatNumber(product.priceWithCouponAndDiscount),
@@ -232,7 +224,7 @@ function tResponseInterceptor(type, tPriceChecker) {
             }
           }
 
-          self.items[self.type].push(self.assembleOneItem(
+          self.items[tConfig.getShopType()].push(self.assembleOneItem(
               formatNumber(product.id),
               product.products[0].titleColumn[1].actionText.text.text,
               formatNumber(price),
@@ -244,7 +236,7 @@ function tResponseInterceptor(type, tPriceChecker) {
         break;
     }
 
-    self.tPriceChecker.responseItems[self.type] = self.items[self.type];
+    self.tPriceChecker.responseItems[tConfig.getShopType()] = self.items[tConfig.getShopType()];
     setTimeout(function() {
       self.tPriceChecker.launch();
       self.isInited = true;
@@ -407,7 +399,7 @@ function tResponseInterceptor(type, tPriceChecker) {
 
           var responseItems = [];
 
-          if (self.type === TYPE_WILDBERRIES) {
+          if (tConfig.getShopType() === TYPE_WILDBERRIES) {
             //console.log(self.currentPathName, self.requestPathName, response);
             switch (self.requestPathName) {
               case '/webapi/lk/basket/data':
@@ -425,7 +417,7 @@ function tResponseInterceptor(type, tPriceChecker) {
 
           //console.log(JSON.parse(response.layoutTrackingInfo));
 
-          if (self.type === TYPE_OZON
+          if (tConfig.getShopType() === TYPE_OZON
               //&& JSON.parse(response.layoutTrackingInfo).layoutContainer === 'SplitInCartPaginator'
               && JSON.parse(response.layoutTrackingInfo).pageType === 'cart'
           ) {
