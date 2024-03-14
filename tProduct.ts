@@ -544,11 +544,11 @@ class tProductLocal extends tProduct implements tProductInterface {
         this.setData(tProduct.PARAM_TITLE, data.title);
 
         if (typeof data.available_date_from !== 'undefined') {
-            this.setData(tProduct.PARAM_AVAILABLE_DATE_FROM, new Date(data.available_date_from));
+            this.setData(tProduct.PARAM_AVAILABLE_DATE_FROM, data.available_date_from);
         }
 
         if (typeof data.not_available_date_from !== 'undefined') {
-            this.setData(tProduct.PARAM_NOT_AVAILABLE_DATE_FROM, new Date(data.not_available_date_from));
+            this.setData(tProduct.PARAM_NOT_AVAILABLE_DATE_FROM, data.not_available_date_from);
         }
 
         if (typeof data.listen_price_value !== 'undefined') {
@@ -563,14 +563,14 @@ class tProductLocal extends tProduct implements tProductInterface {
         this.setDateUpdated(data.date_updated);
 
         if (typeof data.price_dates !== 'undefined') {
-            data.dates.forEach(function (row) {
-                self.appendNewMinPrice(row.price, new Date(row.date));
+            data.price_dates.forEach(function (row) {
+                self.appendNewMinPrice(row.price, row.date);
             });
         }
 
         if (typeof data.stocks !== 'undefined') {
             data.stocks.forEach(function (row) {
-                self.appendNewStock(row.qty, new Date(row.date))
+                self.appendNewStock(row.qty, row.date)
             });
         }
     };

@@ -26,7 +26,10 @@ class tApiRequest {
         data.products = [];
         var keyValues = GM_listValues();
         keyValues.forEach(function(key) {
-            data.products.push(tProductLocal.get(key).toJson());
+            let product = tProductLocal.get(key);
+            product.setFlag(tProductLocal.FLAG_TO_SAVE_PRICE_DATES, true);
+            product.setFlag(tProductLocal.FLAG_TO_SAVE_STOCKS, true);
+            data.products.push(product.toJson());
         });
         data.products = '[' + data.products + ']';
 
