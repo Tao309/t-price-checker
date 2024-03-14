@@ -242,29 +242,23 @@ function tHtml(tPriceChecker) {
     };
     this.getPriceElement = function(productModel, itemElement) {
         var self = this;
-        var oldMinPrice = productModel.getLastPrice();
+        // Сравнение с предыдущей ценой из истории
+        var oldPriceForElement = productModel.getLastPrice();
         var currentPrice = productModel.getCurrentPrice();
         var checkPrice = productModel.getListenPriceValue();
 
         var colorClassName = 'not-changed';
-        if (oldMinPrice) {
-            if (currentPrice > oldMinPrice) {
-                this.tEventListener.whenFoundPriceUp(productModel, itemElement, this.tPriceChecker);
-            } else {
-                this.tEventListener.whenPriceIsNotUp(productModel, itemElement, this.tPriceChecker);
-            }
-        }
+
+        this.tEventListener.whenCheckPriceIsChanged(productModel, itemElement, this.tPriceChecker);
 
         if (productModel.getFlag(tProduct.FLAG_IS_PRICE_DOWN)) {
+            oldPriceForElement = productModel.getPrevLastPrice();
             colorClassName = 'down';
         } else if(productModel.getFlag(tProduct.FLAG_IS_PRICE_UP)) {
             colorClassName = 'up';
         } else {
-            oldMinPrice = '';
+            oldPriceForElement = '';
         }
-
-        // Сравнение с предыдущей ценой из истории
-        var oldPriceForElement = oldMinPrice;
 
         // Главный элемент для всего.
         var div = this.createElement('div', {className: this.tPriceChecker.selectors.oldPrice});
@@ -298,7 +292,7 @@ function tHtml(tPriceChecker) {
         oldPricePercentDiv.append(span);
 
         var percentText;
-        if (oldPriceForElement > 0 && oldPriceForElement != currentPrice) {
+        if (oldPriceForElement > 0 && oldPriceForElement !== currentPrice) {
             var abs = Math.abs(oldPriceForElement - currentPrice);
             var sign = (oldPriceForElement > currentPrice) ? '-' : '+';
             percentText = sign + (Math.round((abs/currentPrice)*100)) + '%';

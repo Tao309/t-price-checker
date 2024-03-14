@@ -37,6 +37,39 @@ function tEventListener() {
         item.setAttribute('data-product-id', jsonItem.product_id);
     }
 
+    // Проверка изменения цены.
+    this.whenCheckPriceIsChanged = function (productModel, item, tPriceChecker) {
+        if (!productModel.isAvailable()) {return;}
+
+        if (tConfig.getShopType() === tConfig.TYPE_WILDBERRIES) {
+            item.querySelector('.list-item__price-old').innerHTML = productModel.getCurrentPrice();
+        }
+
+        var lastPrice = productModel.getLastPrice();
+        var prevLastPrice = productModel.getPrevLastPrice();
+        var currentPrice = productModel.getCurrentPrice();
+
+        if (lastPrice && currentPrice > lastPrice) {
+            tPriceChecker.priceUpChanged++;
+            productModel.setFlag(tProduct.FLAG_IS_PRICE_UP, true);
+            return;
+        }
+
+        if (!prevLastPrice || !lastPrice) {
+            return;
+        }
+
+        if (tProduct.getDiffDateDays(productModel.getPrevLastDate(), new Date()) > 1) {
+            return;
+        }
+
+        if (prevLastPrice > lastPrice) {
+            tPriceChecker.priceDownChanged++;
+            item.setAttribute('data-product-price-decrease', 1);
+            productModel.setFlag(tProduct.FLAG_IS_PRICE_DOWN, true);
+        }
+    };
+
     // Когда найдено, что цена повысилась
     this.whenFoundPriceUp = function (productModel, item, tPriceChecker) {
         tPriceChecker.priceUpChanged++;
