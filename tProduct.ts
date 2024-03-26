@@ -4,6 +4,8 @@
 
 interface tProductInterface {
     // static get(id): tProduct;
+    getId(): number|string;
+    getProductId(): number|string;
     save();
     delete();
 }
@@ -67,6 +69,8 @@ abstract class tProduct {
 
     static readonly FLAG_IS_PRICE_UP = 'is_price_up';
     static readonly FLAG_IS_PRICE_DOWN = 'is_price_down';
+
+    static readonly FLAG_TO_SAVE_PRODUCT = 'flag_to_save_product';
     static readonly FLAG_TO_SAVE_PRICE_DATES = 'flag_to_save_price_dates';
     static readonly FLAG_TO_SAVE_STOCKS = 'flag_to_save_stocks';
 
@@ -75,9 +79,9 @@ abstract class tProduct {
     // Изначальные данные модели.
     originalData = {};
 
-    abstract getId(): number|string;
-    abstract save();
-    abstract getProductId(): number|string;
+    // abstract getId(): number|string;
+    // abstract save();
+    // abstract getProductId(): number|string;
 
     constructor() {
 
@@ -165,14 +169,16 @@ abstract class tProduct {
 
     enableAvailable() {
         this.setData(tProduct.PARAM_AVAILABLE, true);
-        this.setData(tProduct.PARAM_AVAILABLE_DATE_FROM, new Date());
+        this.setData(tProduct.PARAM_AVAILABLE_DATE_FROM, tConfig.getCurrentDate());
+        this.setFlag(tProduct.FLAG_TO_SAVE_PRODUCT, true);
 
         this.save();
     };
 
     disableAvailable() {
         this.setData(tProduct.PARAM_AVAILABLE, false);
-        this.setData(tProduct.PARAM_NOT_AVAILABLE_DATE_FROM, new Date());
+        this.setData(tProduct.PARAM_NOT_AVAILABLE_DATE_FROM, tConfig.getCurrentDate());
+        this.setFlag(tProduct.FLAG_TO_SAVE_PRODUCT, true);
 
         this.save();
     };
@@ -271,7 +277,7 @@ abstract class tProduct {
 
     appendNewMinPrice(price: number, date?: Date|null) {
         let newPriceDate: PriceDate = {
-            date: date ? date : new Date(),
+            date: date ? date : tConfig.getCurrentDate(),
             price: price
         };
 
@@ -284,7 +290,7 @@ abstract class tProduct {
 
     appendNewStock(qty: number, date?: Date) {
         let newStock: Stock = {
-            date: date ? date : new Date(),
+            date: date ? date : tConfig.getCurrentDate(),
             qty: qty
         };
 
@@ -355,12 +361,12 @@ abstract class tProduct {
 
     // Оставшиеся кол-во дней до релиза, если меньше дня, то день.
     getWaitingForReleaseDays(): number {
-        let currentDate = new Date();
+        let currentDate = tConfig.getCurrentDate();
         if (!this.getReleaseDate() || this.getReleaseDate() < currentDate) {
             return 0;
         }
 
-        let daysDiff = tProduct.getDiffDateDays(new Date(), this.getReleaseDate());
+        let daysDiff = tProduct.getDiffDateDays(tConfig.getCurrentDate(), this.getReleaseDate());
 
         return daysDiff > 0 ? daysDiff : 1;
     };
@@ -378,7 +384,7 @@ abstract class tProduct {
 
         let showForDays = 5;
         let limitDate = this.getReleaseDate();
-        let currentDate = new Date();
+        let currentDate = tConfig.getCurrentDate();
 
         if (limitDate > currentDate) {
             return 0;
@@ -390,7 +396,7 @@ abstract class tProduct {
             return 0;
         }
 
-        let daysDiff = tProduct.getDiffDateDays(this.getReleaseDate(), new Date());
+        let daysDiff = tProduct.getDiffDateDays(this.getReleaseDate(), tConfig.getCurrentDate());
 
         return daysDiff > 0 ? daysDiff : 1;
     };
@@ -450,70 +456,70 @@ class tProductLocal extends tProduct implements tProductInterface {
     importTamperData(data: Object|undefined, typeProductId?: string|undefined) {
         var self = this;
 
-        if (typeof data.id !== 'undefined') {
+        if (!tConfig.isEmpty(data.id)) {
             this.setData(tProduct.PARAM_PRODUCT_ID, data.id);
         } else if(typeProductId !== 'undefined') {
             this.setData(tProduct.PARAM_PRODUCT_ID, typeProductId.split('-').pop());
         }
 
-        if (typeof data.type !== 'undefined') {
+        if (!tConfig.isEmpty(data.type)) {
             this.setData(tProduct.PARAM_TYPE, data.type);
         } else if(typeProductId !== 'undefined') {
             this.setData(tProduct.PARAM_TYPE, typeProductId.split('-').shift());
         }
 
-        if (typeof data.title !== 'undefined') {
+        if (!tConfig.isEmpty(data.title)) {
             this.setData(tProduct.PARAM_TITLE, data.title);
         }
 
-        if (typeof data.available !== 'undefined') {
+        if (!tConfig.isEmpty(data.available)) {
             this.setData(tProduct.PARAM_AVAILABLE, data.available);
         } else {
             this.setData(tProduct.PARAM_AVAILABLE, true);
         }
 
-        if (typeof data.available_date_from !== 'undefined') {
-            this.setData(tProduct.PARAM_AVAILABLE_DATE_FROM, new Date(data.available_date_from));
+        if (!tConfig.isEmpty(data.available_date_from)) {
+            this.setData(tProduct.PARAM_AVAILABLE_DATE_FROM, tConfig.setTimezoneToDate(data.available_date_from));
         }
 
-        if (typeof data.not_available_date_from !== 'undefined') {
-            this.setData(tProduct.PARAM_NOT_AVAILABLE_DATE_FROM, new Date(data.not_available_date_from));
+        if (!tConfig.isEmpty(data.not_available_date_from)) {
+            this.setData(tProduct.PARAM_NOT_AVAILABLE_DATE_FROM, tConfig.setTimezoneToDate(data.not_available_date_from));
         }
 
-        if (typeof data.checkPrice !== 'undefined') {
+        if (!tConfig.isEmpty(data.checkPrice)) {
             this.setData(tProduct.PARAM_LISTEN_PRICE_VALUE, data.checkPrice);
         }
 
-        if (typeof data.releaseDate !== 'undefined') {
-            this.setData(tProduct.PARAM_RELEASE_DATE, data.releaseDate);
+        if (!tConfig.isEmpty(data.releaseDate)) {
+            this.setData(tProduct.PARAM_RELEASE_DATE, tConfig.setTimezoneToDate(data.releaseDate));
         }
 
-        if (typeof data.dateCreated !== 'undefined') {
-            this.setDateCreated(data.dateCreated);
+        if (!tConfig.isEmpty(data.dateCreated)) {
+            this.setDateCreated(tConfig.setTimezoneToDate(data.dateCreated));
         }
 
-        if (typeof data.dateUpdated !== 'undefined') {
-            this.setDateUpdated(data.dateUpdated);
+        if (!tConfig.isEmpty(data.dateUpdated)) {
+            this.setDateUpdated(tConfig.setTimezoneToDate(data.dateUpdated));
         }
 
-        if (typeof data.dates === 'object') {
+        if (!tConfig.isEmpty(data.dates)) {
             data.dates.forEach(function(row) {
                 var date;
                 if (tProduct.isStringDateMatch(row.date)) {
                     date = tProduct.convertStringToDate(row.date);
                 } else {
-                    date = new Date(row.date);
+                    date = tConfig.setTimezoneToDate(row.date);
                 }
 
                 self.appendNewMinPrice(row.price, date);
             });
-        } else if (typeof data.price !== 'undefined') {
+        } else if (!tConfig.isEmpty(data.price)) {
             var date;
             if (data.lastDate !== 'undefined') {
                 if (tProduct.isStringDateMatch(data.lastDate)) {
                     date = tProduct.convertStringToDate(data.lastDate);
                 } else {
-                    date = new Date(data.lastDate);
+                    date = tConfig.setTimezoneToDate(data.lastDate);
                 }
             }
 
@@ -523,14 +529,14 @@ class tProductLocal extends tProduct implements tProductInterface {
             );
         }
 
-        if (typeof data.stocks !== 'undefined') {
+        if (!tConfig.isEmpty(data.stocks)) {
             data.stocks.forEach(function(row) {
-                self.appendNewStock(row.qty, new Date(row.date))
+                self.appendNewStock(row.qty, tConfig.setTimezoneToDate(row.date))
             });
-        } else if (typeof data.maxQty !== 'undefined') {
+        } else if (!tConfig.isEmpty(data.maxQty)) {
             this.appendNewStock(
                 data.maxQty,
-                typeof data.maxQtyDate !== 'undefined' ? new Date(data.maxQtyDate) : null
+                typeof data.maxQtyDate !== 'undefined' ? tConfig.setTimezoneToDate(data.maxQtyDate) : null
             );
         }
     };
@@ -543,34 +549,39 @@ class tProductLocal extends tProduct implements tProductInterface {
         this.setData(tProduct.PARAM_TYPE, data.shop_type);
         this.setData(tProduct.PARAM_TITLE, data.title);
 
-        if (typeof data.available_date_from !== 'undefined') {
-            this.setData(tProduct.PARAM_AVAILABLE_DATE_FROM, data.available_date_from);
+        if (!tConfig.isEmpty(data.available_date_from)) {
+            this.setData(tProduct.PARAM_AVAILABLE_DATE_FROM, new Date(data.available_date_from));
         }
 
-        if (typeof data.not_available_date_from !== 'undefined') {
-            this.setData(tProduct.PARAM_NOT_AVAILABLE_DATE_FROM, data.not_available_date_from);
+        if (!tConfig.isEmpty(data.not_available_date_from)) {
+            this.setData(tProduct.PARAM_NOT_AVAILABLE_DATE_FROM, new Date(data.not_available_date_from));
         }
 
-        if (typeof data.listen_price_value !== 'undefined') {
+        if (!tConfig.isEmpty(data.listen_price_value)) {
             this.setData(tProduct.PARAM_LISTEN_PRICE_VALUE, data.listen_price_value);
         }
 
-        if (typeof data.release_date !== 'undefined') {
-            this.setData(tProduct.PARAM_RELEASE_DATE, data.release_date);
+        if (!tConfig.isEmpty(data.release_date)) {
+            this.setData(tProduct.PARAM_RELEASE_DATE, new Date(data.release_date));
         }
 
-        this.setDateCreated(data.date_created);
-        this.setDateUpdated(data.date_updated);
+        if (!tConfig.isEmpty(data.date_created)) {
+            this.setDateCreated(new Date(data.date_created));
+        }
+
+        if (!tConfig.isEmpty(data.date_updated)) {
+            this.setDateUpdated(new Date(data.date_updated));
+        }
 
         if (typeof data.price_dates !== 'undefined') {
             data.price_dates.forEach(function (row) {
-                self.appendNewMinPrice(row.price, row.date);
+                self.appendNewMinPrice(row.price, new Date(row.date));
             });
         }
 
         if (typeof data.stocks !== 'undefined') {
             data.stocks.forEach(function (row) {
-                self.appendNewStock(row.qty, row.date)
+                self.appendNewStock(row.qty, new Date(row.date))
             });
         }
     };
@@ -588,6 +599,11 @@ class tProductLocal extends tProduct implements tProductInterface {
     };
 
     static create(data: Object, currentPrice: number, currentQty: number): tProductLocal {
+        if (tConfig.isApiEnabled()) {
+            data.product_id = data.id;
+            data.shop_type = data.type;
+        }
+
         var productModel = new tProductLocal(data);
 
         productModel.appendCurrentPriceAndQty(currentPrice, currentQty);
@@ -600,7 +616,8 @@ class tProductLocal extends tProduct implements tProductInterface {
             productModel.appendNewStock(currentQty);
         }
 
-        productModel.setDateCreated(new Date());
+        productModel.setDateCreated(tConfig.getCurrentDate());
+        productModel.setDateUpdated(tConfig.getCurrentDate());
 
         return productModel;
     };
@@ -610,9 +627,11 @@ class tProductLocal extends tProduct implements tProductInterface {
     };
 
     save(toMassSave: boolean = false) {
-        if (toMassSave === true) {
-            tProductRepository.addProductToMassSave(this);
-            return;
+        if (tConfig.isApiEnabled()) {
+            if (toMassSave === true) {
+                tProductRepository.addProductToMassSave(this);
+                return;
+            }
         }
 
         tProductRepository.saveProduct(this);

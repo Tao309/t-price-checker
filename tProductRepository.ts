@@ -55,6 +55,11 @@ class tProductRepository {
             return true;
         }
 
+        if (tConfig.isDebugEnabled()) {
+            console.log('tProductRepository.removeProduct');
+            console.log(productModel);
+        }
+
         tApiRequest.deleteProduct(productModel);
 
         return true;
@@ -77,7 +82,7 @@ class tProductRepository {
                 checkPrice: productModel.getData(tProduct.PARAM_LISTEN_PRICE_VALUE),
                 releaseDate: productModel.getReleaseDate(),
                 dateCreated: productModel.getDateCreated(),
-                dateUpdated: new Date()
+                dateUpdated: tConfig.getCurrentDate()
             };
 
             var dates = [];
@@ -91,12 +96,23 @@ class tProductRepository {
             productObject.dates = dates;
 
             GM_setValue(productModel.getId(), JSON.stringify(productObject));
+            return;
+        }
+
+        if (tConfig.isDebugEnabled()) {
+            console.log('tProductRepository.saveProduct');
+            console.log(productModel);
         }
 
         tApiRequest.saveProduct(productModel);
     };
 
     static addProductToMassSave(productModel: tProductLocal) {
+        if (tConfig.isDebugEnabled()) {
+            console.log('tProductRepository.addProductToMassSave');
+            console.log(productModel);
+        }
+
         tProductRepository.toSaveProducts.push(productModel);
     };
 
@@ -105,8 +121,19 @@ class tProductRepository {
             return;
         }
 
-        tApiRequest.saveProducts(tProductRepository.toSaveProducts, function (r) {
+        console.log('processMassSave', tProductRepository.toSaveProducts.length);
 
+        if (tConfig.isDebugEnabled()) {
+            console.log('tProductRepository.processMassSave');
+            console.log(tProductRepository.toSaveProducts);
+        }
+
+        tApiRequest.saveProducts(tProductRepository.toSaveProducts, function (r) {
+            try {
+                console.log(JSON.parse(r));
+            } catch(e) {
+                console.log(r);
+            }
         });
     };
 
@@ -125,12 +152,12 @@ class tProductRepository {
             product.appendCurrentPriceAndQty(currentPrice, itemStockQty);
 
             if (product.getLastPrice() > currentPrice) {
-                product.setFlag(tProductLocal.FLAG_TO_SAVE_PRICE_DATES, true);
+                product.setFlag(tProduct.FLAG_TO_SAVE_PRICE_DATES, true);
                 product.appendNewMinPrice(currentPrice);
                 requireToSave = true;
             }
 
-            var diffDays = product.getLastStockDate() ? tProduct.getDiffDateDays(product.getLastStockDate(), (new Date())) : null;
+            var diffDays = product.getLastStockDate() ? tProduct.getDiffDateDays(product.getLastStockDate(), tConfig.getCurrentDate()) : null;
             // Прошло ли больше дней с последнего стока.
             let isStockDaysLimitPassed = diffDays && diffDays >= 6;
             // Текущие кол-во больше последнего стока.
@@ -152,7 +179,7 @@ class tProductRepository {
                 // Кол-во стало больше, но не прошло много дней, чтобы это был новый сток
                 isCurrentQtyMoreThanLastStock && !isStockMoreThanLimitChanged  && !isStockDaysLimitPassed
             ) {
-                product.setFlag(tProductLocal.FLAG_TO_SAVE_STOCKS, true);
+                product.setFlag(tProduct.FLAG_TO_SAVE_STOCKS, true);
                 product.changeLastStockQty(product.getCurrentQty());
                 requireToSave = true;
             } else if (
@@ -164,7 +191,7 @@ class tProductRepository {
                 || isStockMoreThanLimitChanged
                 || !product.getLastStock()
             ) {
-                product.setFlag(tProductLocal.FLAG_TO_SAVE_STOCKS, true);
+                product.setFlag(tProduct.FLAG_TO_SAVE_STOCKS, true);
                 product.appendNewStock(itemStockQty);
                 requireToSave = true;
             }
@@ -175,8 +202,9 @@ class tProductRepository {
                 title: title
             }, currentPrice, itemStockQty);
 
-            product.setFlag(tProductLocal.FLAG_TO_SAVE_PRICE_DATES, true);
-            product.setFlag(tProductLocal.FLAG_TO_SAVE_STOCKS, true);
+            product.setFlag(tProduct.FLAG_TO_SAVE_PRODUCT, true);
+            product.setFlag(tProduct.FLAG_TO_SAVE_PRICE_DATES, true);
+            product.setFlag(tProduct.FLAG_TO_SAVE_STOCKS, true);
 
             requireToSave = true;
         }

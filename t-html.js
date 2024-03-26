@@ -3,9 +3,9 @@ function tHtml(tPriceChecker) {
     this.tPriceChecker = tPriceChecker;
     this.tProductRepository = new tProductRepository();
     this.checkerElements = {
-        'check-price': {label: 'отслеживаемые'},
-        'price-decrease': {label: 'понижение'},
-        'returns': {label: 'снова в продаже'},
+        'check-price': {label: 'Отслеживаемые'},
+        'price-decrease': {label: 'Понижение'},
+        'returns': {label: 'Снова в продаже'},
         'is-available-for-release-date': {label: 'В продаже'},
         'is-waiting-for-release-date': {label: 'Ожидается'}
     };
@@ -460,6 +460,7 @@ function tHtml(tPriceChecker) {
         ))
             .setSubmitFunction(function (tEditWindow, productModel, editInput) {
                 productModel.setTitle(editInput.value);
+                productModel.setFlag(tProduct.FLAG_TO_SAVE_PRODUCT, true);
                 productModel.save();
             })
             .setKeyUpFunc(function (targetInput, sumbitButton) {
@@ -475,12 +476,14 @@ function tHtml(tPriceChecker) {
         ))
             .setSubmitFunction(function (tEditWindow, productModel, editInput) {
                 productModel.setListenPriceValue(editInput.value);
+                productModel.setFlag(tProduct.FLAG_TO_SAVE_PRODUCT, true);
                 productModel.save();
 
                 // buttonElement.classList.remove('t-check-price-available');
             })
             .setResetFunction(function (tEditWindow, productModel) {
                 productModel.setListenPriceValue(null);
+                productModel.setFlag(tProduct.FLAG_TO_SAVE_PRODUCT, true);
                 productModel.save();
             })
             .setKeyUpFunc(function (targetInput, sumbitButton) {
@@ -499,11 +502,13 @@ function tHtml(tPriceChecker) {
         ))
             .setSubmitFunction(function (tEditWindow, productModel, editInput) {
                 productModel.setReleaseDate(editInput.value);
+                productModel.setFlag(tProduct.FLAG_TO_SAVE_PRODUCT, true);
                 productModel.save();
                 tEditWindow.tHtml.appendReleaseDate(itemElement, productModel);
             })
             .setResetFunction(function (tEditWindow, productModel) {
                 productModel.setReleaseDate(null);
+                productModel.setFlag(tProduct.FLAG_TO_SAVE_PRODUCT, true);
                 productModel.save();
                 tEditWindow.tHtml.appendReleaseDate(itemElement, productModel);
             })

@@ -11,7 +11,7 @@ function tEventListener() {
     // После успешной обработки позиции для списка
     this.afterSuccessInitProduct = function (productModel, item, tPriceChecker) {
         if (productModel.isAvailable() && productModel.getAvailableDateFrom()) {
-            if (tProduct.getDiffDateDays(productModel.getAvailableDateFrom(), (new Date())) <= 1) {
+            if (tProduct.getDiffDateDays(productModel.getAvailableDateFrom(), tConfig.getCurrentDate()) <= 1) {
                 item.setAttribute('data-product-returns', 1);
                 tPriceChecker.checkReturnsCount++;
             }
@@ -59,7 +59,7 @@ function tEventListener() {
             return;
         }
 
-        if (tProduct.getDiffDateDays(productModel.getPrevLastDate(), new Date()) > 1) {
+        if (tProduct.getDiffDateDays(productModel.getLastDate(), tConfig.getCurrentDate()) > 1) {
             return;
         }
 
@@ -69,26 +69,6 @@ function tEventListener() {
             productModel.setFlag(tProduct.FLAG_IS_PRICE_DOWN, true);
         }
     };
-
-    // Когда найдено, что цена повысилась
-    this.whenFoundPriceUp = function (productModel, item, tPriceChecker) {
-        tPriceChecker.priceUpChanged++;
-        productModel.setFlag(tProduct.FLAG_IS_PRICE_UP, true);
-    }
-
-    // Когда найдено, что цена не повысилась
-    this.whenPriceIsNotUp = function (productModel, item, tPriceChecker) {
-        if (!productModel.isAvailable()) {return;}
-        if (productModel.getCurrentPrice() >= productModel.getPrevLastPrice()) {return;}
-
-        if (tProduct.getDiffDateDays(productModel.getPrevLastDate(), new Date()) > 1) {
-            return;
-        }
-
-        tPriceChecker.priceDownChanged++;
-        item.setAttribute('data-product-price-decrease', 1);
-        productModel.setFlag(tProduct.FLAG_IS_PRICE_DOWN, true);
-    }
 
     // Найден товар с ценой, ниже отслеживаемой
     this.whenFoundPriceCheck = function (product, item) {

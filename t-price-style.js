@@ -31,6 +31,7 @@ function tPriceStyle() {
                    .t-item-qty {margin-left: 8px;}
                    .t-list-item-not-available .t-item-qty {margin-left: 10px;}
                    .t-old-price .remove-from-storage-button {right: 28px;}
+                   .t-list-item .list-item__price-old {text-decoration: none!important;}
                 </style>`);
                 break;
             case TYPE_CHITAI_GOROD:

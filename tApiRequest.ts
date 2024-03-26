@@ -27,8 +27,9 @@ class tApiRequest {
         var keyValues = GM_listValues();
         keyValues.forEach(function(key) {
             let product = tProductLocal.get(key);
-            product.setFlag(tProductLocal.FLAG_TO_SAVE_PRICE_DATES, true);
-            product.setFlag(tProductLocal.FLAG_TO_SAVE_STOCKS, true);
+            product.setFlag(tProduct.FLAG_TO_SAVE_PRODUCT, true);
+            product.setFlag(tProduct.FLAG_TO_SAVE_PRICE_DATES, true);
+            product.setFlag(tProduct.FLAG_TO_SAVE_STOCKS, true);
             data.products.push(product.toJson());
         });
         data.products = '[' + data.products + ']';
@@ -54,8 +55,9 @@ class tApiRequest {
             'data': product.toJson()
         };
 
-        product.unsetFlag(tProductLocal.FLAG_TO_SAVE_PRICE_DATES);
-        product.unsetFlag(tProductLocal.FLAG_TO_SAVE_STOCKS);
+        product.unsetFlag(tProduct.FLAG_TO_SAVE_PRODUCT);
+        product.unsetFlag(tProduct.FLAG_TO_SAVE_PRICE_DATES);
+        product.unsetFlag(tProduct.FLAG_TO_SAVE_STOCKS);
 
         tApiRequest.sendRequest(data, callback);
     };
@@ -70,6 +72,7 @@ class tApiRequest {
         products.forEach(function(product) {
             data.products.push(product.toJson());
         });
+
         data.products = '[' + data.products + ']';
 
         tApiRequest.sendRequest(data, callback);
