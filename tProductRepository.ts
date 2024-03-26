@@ -169,7 +169,7 @@ class tProductRepository {
             // Изменение стока превысило допустимое значение по %.
             let isStockMoreThanLimitChanged = false;
 
-            if (isCurrentQtyMoreThanLastStock) {
+            if (isCurrentQtyMoreThanLastStock && product.getLastStockQty() > 10) {
                 let diffQty = product.getCurrentQty() - product.getLastStockQty();
                 stockChangePercent = ((diffQty / product.getLastStockQty()) * 100).toFixed(1);
                 isStockMoreThanLimitChanged = stockChangePercent > limitStockPercent;
@@ -186,7 +186,7 @@ class tProductRepository {
                 // Был недоступен и стал доступен, с большим кол-вом чем в последнем стоке
                 (isCurrentQtyMoreThanLastStock && product.isBecomeAvailable())
                 // Разницу между стоком и сегодня 7 дней прошло
-                || (isCurrentQtyMoreThanLastStock && diffDays && isStockDaysLimitPassed)
+                || (isCurrentQtyMoreThanLastStock && isStockDaysLimitPassed)
                 // Погрешность, если старое вернулось в сток более чем на 5 позиций
                 || isStockMoreThanLimitChanged
                 || !product.getLastStock()
